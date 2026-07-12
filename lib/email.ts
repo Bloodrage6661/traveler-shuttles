@@ -4,7 +4,11 @@ function getResend() {
   return new Resend(process.env.RESEND_API_KEY!);
 }
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
-const DRIVER_EMAIL = process.env.DRIVER_EMAIL ?? "";
+// DRIVER_EMAIL accepts one address or a comma-separated list — every address gets the booking email.
+const DRIVER_EMAILS = (process.env.DRIVER_EMAIL ?? "")
+  .split(",")
+  .map((e) => e.trim())
+  .filter(Boolean);
 
 const BRAND = {
   green: "#1B4D2E",
@@ -65,7 +69,7 @@ export async function sendDriverNotification(booking: {
   preferredDate: string | null;
   preferredTimeWindow: string | null;
 }) {
-  if (!DRIVER_EMAIL) return;
+  if (DRIVER_EMAILS.length === 0) return;
 
   const ref = booking.id.slice(0, 8).toUpperCase();
   const fare = booking.fareZar ? `R ${booking.fareZar.toLocaleString("en-ZA")}` : "Custom quote required";
@@ -110,8 +114,8 @@ export async function sendDriverNotification(booking: {
   `;
 
   await getResend().emails.send({
-    from: "Traveler Shuttles <onboarding@resend.dev>",
-    to: DRIVER_EMAIL,
+    from: "Traveler Shuttles <noreply@travelershuttlesandtours.co.za>",
+    to: DRIVER_EMAILS,
     subject: `New booking request #${ref} — ${booking.clientName}`,
     html: layout(body),
   });
@@ -140,7 +144,7 @@ export async function sendClientPending(booking: {
   `;
 
   await getResend().emails.send({
-    from: "Traveler Shuttles <onboarding@resend.dev>",
+    from: "Traveler Shuttles <noreply@travelershuttlesandtours.co.za>",
     to: booking.clientEmail,
     subject: `Booking received #${ref} — awaiting confirmation`,
     html: layout(body),
@@ -189,7 +193,7 @@ export async function sendClientConfirmed(booking: {
   `;
 
   await getResend().emails.send({
-    from: "Traveler Shuttles <onboarding@resend.dev>",
+    from: "Traveler Shuttles <noreply@travelershuttlesandtours.co.za>",
     to: booking.clientEmail,
     subject: `Transfer confirmed #${ref} — Traveler Shuttles`,
     html: layout(body),
@@ -217,7 +221,7 @@ export async function sendClientDeclined(booking: {
   `;
 
   await getResend().emails.send({
-    from: "Traveler Shuttles <onboarding@resend.dev>",
+    from: "Traveler Shuttles <noreply@travelershuttlesandtours.co.za>",
     to: booking.clientEmail,
     subject: `Booking update #${ref}`,
     html: layout(body),

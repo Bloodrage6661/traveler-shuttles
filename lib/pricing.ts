@@ -19,6 +19,13 @@ const RATES: Record<Exclude<PricingBand, "custom">, Record<CustomerTier, Record<
   },
 };
 
+export function getBand(distanceKm: number): PricingBand {
+  if (distanceKm <= 25) return "25km";
+  if (distanceKm <= 50) return "50km";
+  if (distanceKm <= 75) return "75km";
+  return "custom";
+}
+
 export function getFare(band: PricingBand, passengers: number, tier: CustomerTier = "General"): number | null {
   if (band === "custom") return null;
   return RATES[band][tier][passengers] ?? null;

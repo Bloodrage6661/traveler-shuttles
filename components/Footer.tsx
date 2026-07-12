@@ -26,15 +26,15 @@ export default function Footer() {
             </p>
             <div className="flex flex-col gap-2 mt-6">
               <a
-                href="https://wa.me/27000000000"
+                href="https://wa.me/27766432418"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 text-sm text-white/70 hover:text-[#C9A84C] transition-colors"
               >
                 <MessageCircle size={15} /> WhatsApp Us
               </a>
-              <a href="tel:+27000000000" className="inline-flex items-center gap-2 text-sm text-white/70 hover:text-[#C9A84C] transition-colors">
-                <Phone size={15} /> +27 00 000 0000
+              <a href="tel:+27766432418" className="inline-flex items-center gap-2 text-sm text-white/70 hover:text-[#C9A84C] transition-colors">
+                <Phone size={15} /> 076 643 2418
               </a>
               <a href="mailto:info@travelershuttles.co.za" className="inline-flex items-center gap-2 text-sm text-white/70 hover:text-[#C9A84C] transition-colors">
                 <Mail size={15} /> info@travelershuttles.co.za

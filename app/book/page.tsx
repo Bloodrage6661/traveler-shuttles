@@ -39,7 +39,7 @@ export default function BookPage() {
             </div>
             <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4">Book Your Transfer</h1>
             <p className="text-white/65 text-lg max-w-lg mx-auto leading-relaxed mb-8">
-              Fill in your details, choose your zone, pick a date. The driver will confirm within the hour.
+              Fill in your details, get your fare instantly, pick a date. The driver will confirm within the hour.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-xl mx-auto">
               {perks.map((p) => (

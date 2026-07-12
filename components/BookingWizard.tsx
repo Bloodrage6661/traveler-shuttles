@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Plane, Car, MapPin, Users, Phone, Mail, User, ChevronRight, Check, Loader2, CalendarDays, Clock } from "lucide-react";
-import { formatRand, getFare, BAND_LABELS, TIER_LABELS, TIER_DESCRIPTIONS, type PricingBand, type CustomerTier } from "@/lib/pricing";
+import { Plane, Car, Users, Phone, Mail, User, ChevronRight, Check, Loader2, Clock } from "lucide-react";
+import { formatRand, BAND_LABELS, TIER_LABELS, TIER_DESCRIPTIONS, type PricingBand, type CustomerTier } from "@/lib/pricing";
 import { useAuth } from "@/lib/auth";
+import AddressAutocomplete, { type SelectedPlace } from "@/components/AddressAutocomplete";
 
 type TripType = "to_airport" | "from_airport" | "point_to_point";
 type TimeWindow = "morning" | "midday" | "afternoon" | "evening";
-type Step = "details" | "zone" | "price" | "calendar" | "submitted";
+type Step = "details" | "price" | "calendar" | "submitted";
 
 const TRIP_TYPE_LABELS: Record<TripType, string> = {
   to_airport:     "To Airport",
@@ -20,13 +21,6 @@ const TIME_WINDOWS: { value: TimeWindow; label: string; sub: string }[] = [
   { value: "midday",    label: "Midday",    sub: "10am – 2pm" },
   { value: "afternoon", label: "Afternoon", sub: "2pm – 6pm" },
   { value: "evening",   label: "Evening",   sub: "6pm – 10pm" },
-];
-
-const ZONES: { band: PricingBand; label: string; desc: string }[] = [
-  { band: "25km", label: "Up to 25 km",  desc: "Stellenbosch, Somerset West & nearby" },
-  { band: "50km", label: "Up to 50 km",  desc: "Franschhoek, Paarl & Cape Town suburbs" },
-  { band: "75km", label: "Up to 75 km",  desc: "Cape Town CBD, V&A Waterfront & CTIA" },
-  { band: "custom", label: "Over 75 km", desc: "Long-distance or remote destinations" },
 ];
 
 function Label({ children }: { children: React.ReactNode }) {
@@ -170,8 +164,14 @@ export default function BookingWizard() {
   const [tripType,     setTripType]     = useState<TripType>("to_airport");
   const [customerTier, setCustomerTier] = useState<CustomerTier>("General");
 
-  // Step 2
+  // Coordinates captured when an autocomplete suggestion is chosen
+  const [pickupCoords,  setPickupCoords]  = useState<SelectedPlace | null>(null);
+  const [dropoffCoords, setDropoffCoords] = useState<SelectedPlace | null>(null);
+
+  // Step 2 — distance computed by Geoapify routing
   const [band, setBand] = useState<PricingBand | null>(null);
+  const [distanceKm, setDistanceKm] = useState<number | null>(null);
+  const [fare, setFare] = useState<number | null>(null);
 
   // Step 3
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -180,18 +180,42 @@ export default function BookingWizard() {
   // Result
   const [bookingRef, setBookingRef] = useState<string | null>(null);
 
-  const fare = band ? getFare(band, passengers, customerTier) : null;
-
-  const stepIndex: Record<Step, number> = { details: 0, zone: 1, price: 1, calendar: 2, submitted: 3 };
+  const stepIndex: Record<Step, number> = { details: 0, price: 1, calendar: 2, submitted: 3 };
   const currentStep = stepIndex[step];
 
-  const goToZone = () => {
+  const goToFare = async () => {
     setError(null);
     if (!firstName || !lastName || !email || !cell || !pickup || !dropoff) {
       setError("Please fill in all fields.");
       return;
     }
-    setStep("zone");
+    if (!pickupCoords || !dropoffCoords) {
+      setError("Please pick both addresses from the suggestions list so we can measure the distance.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch("/api/calculate-fare", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pickup: { lat: pickupCoords.lat, lon: pickupCoords.lon },
+          dropoff: { lat: dropoffCoords.lat, lon: dropoffCoords.lon },
+          passengers,
+          customerTier,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Could not calculate your fare");
+      setDistanceKm(data.distanceKm);
+      setBand(data.band);
+      setFare(data.fare);
+      setStep("price");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Could not calculate your fare");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -208,7 +232,7 @@ export default function BookingWizard() {
           clientCell: cell,
           pickupAddress: pickup,
           dropoffAddress: dropoff,
-          distanceKm: 0,
+          distanceKm: distanceKm ?? 0,
           passengers,
           tripType,
           customerTier,
@@ -243,7 +267,7 @@ export default function BookingWizard() {
           clientCell: cell,
           pickupAddress: pickup,
           dropoffAddress: dropoff,
-          distanceKm: 0,
+          distanceKm: distanceKm ?? 0,
           passengers,
           tripType,
           userId: user?.id ?? null,
@@ -303,19 +327,21 @@ export default function BookingWizard() {
             <div><Label>Cell number</Label><Field icon={Phone} type="tel" placeholder="+27 82 123 4567" value={cell} onChange={e => setCell(e.target.value)} /></div>
             <div>
               <Label>Pickup address</Label>
-              <div className="relative">
-                <MapPin size={16} className="absolute left-3 top-3.5 text-slate-400 pointer-events-none" />
-                <textarea value={pickup} onChange={e => setPickup(e.target.value)} rows={2} placeholder="Street address, suburb, city…"
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pl-9 text-sm text-slate-800 placeholder-slate-400 outline-none transition focus:border-[#1B3A6B] focus:ring-2 focus:ring-[#1B3A6B]/10 resize-none" />
-              </div>
+              <AddressAutocomplete
+                value={pickup}
+                onChange={v => { setPickup(v); setPickupCoords(null); }}
+                onSelect={p => { setPickup(p.address); setPickupCoords(p); }}
+                placeholder="Start typing an address…"
+              />
             </div>
             <div>
               <Label>Drop-off address</Label>
-              <div className="relative">
-                <MapPin size={16} className="absolute left-3 top-3.5 text-slate-400 pointer-events-none" />
-                <textarea value={dropoff} onChange={e => setDropoff(e.target.value)} rows={2} placeholder="Street address, suburb, city…"
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pl-9 text-sm text-slate-800 placeholder-slate-400 outline-none transition focus:border-[#1B3A6B] focus:ring-2 focus:ring-[#1B3A6B]/10 resize-none" />
-              </div>
+              <AddressAutocomplete
+                value={dropoff}
+                onChange={v => { setDropoff(v); setDropoffCoords(null); }}
+                onSelect={p => { setDropoff(p.address); setDropoffCoords(p); }}
+                placeholder="Start typing an address…"
+              />
             </div>
             <div>
               <Label>Number of passengers</Label>
@@ -359,53 +385,10 @@ export default function BookingWizard() {
               </div>
             </div>
             {error && <p className="text-red-500 text-sm">{error}</p>}
-            <button onClick={goToZone}
-              className="w-full py-3.5 rounded-xl bg-[#1B3A6B] text-white font-bold text-sm flex items-center justify-center gap-2 hover:bg-[#224889] transition">
-              <ChevronRight size={16} /> See My Fare
+            <button onClick={goToFare} disabled={loading}
+              className="w-full py-3.5 rounded-xl bg-[#1B3A6B] text-white font-bold text-sm flex items-center justify-center gap-2 hover:bg-[#224889] transition disabled:opacity-60">
+              {loading ? <Loader2 size={16} className="animate-spin" /> : <><ChevronRight size={16} /> Calculate My Fare</>}
             </button>
-          </div>
-        )}
-
-        {/* ── Step 2: Zone picker ── */}
-        {step === "zone" && (
-          <div>
-            <h2 className="font-semibold text-slate-800 text-lg mb-1">How Far Are You Travelling?</h2>
-            <p className="text-slate-500 text-sm mb-1">Select the distance band that best matches your trip.</p>
-            <p className="text-xs text-[#1B3A6B] font-medium mb-4">Showing <span className="font-bold">{TIER_LABELS[customerTier]}</span> rates</p>
-            <div className="space-y-3 mb-6">
-              {ZONES.map(z => (
-                <button key={z.band} onClick={() => setBand(z.band)}
-                  className={`w-full p-4 rounded-xl border text-left transition
-                    ${band === z.band ? "border-[#1B3A6B] bg-[#1B3A6B]/5 ring-2 ring-[#1B3A6B]/20" : "border-slate-200 hover:border-slate-300"}`}>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-semibold text-slate-800 text-sm">{z.label}</p>
-                      <p className="text-slate-500 text-xs mt-0.5">{z.desc}</p>
-                    </div>
-                    <div className="text-right shrink-0 ml-4">
-                      {z.band !== "custom" ? (
-                        <p className="font-bold text-[#1B4D2E] text-sm">
-                          {formatRand(getFare(z.band, passengers, customerTier) ?? 0)}
-                        </p>
-                      ) : (
-                        <p className="text-slate-400 text-xs">Quote required</p>
-                      )}
-                      <p className="text-slate-400 text-xs">{passengers} pax</p>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-            <button onClick={() => {
-              if (!band) { setError("Please select a distance zone."); return; }
-              setError(null);
-              setStep(band === "custom" ? "price" : "price");
-            }} disabled={!band}
-              className="w-full py-3.5 rounded-xl bg-[#C9A84C] text-[#133820] font-bold text-sm flex items-center justify-center gap-2 hover:bg-[#D4B870] transition disabled:opacity-50">
-              {band === "custom" ? <><Car size={16} /> Request a Quote</> : <><CalendarDays size={16} /> Select a Date</>}
-            </button>
-            <button onClick={() => setStep("details")} className="w-full mt-2 py-2 text-sm text-slate-400 hover:text-slate-600 transition">← Change details</button>
-            {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
           </div>
         )}
 
@@ -419,11 +402,14 @@ export default function BookingWizard() {
             <p className="text-slate-500 text-sm mb-2">Your trip is beyond our standard pricing bands.</p>
             <p className="text-slate-500 text-sm mb-8">Submit your details and we&apos;ll get back to you with personalised pricing promptly.</p>
             {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+            {distanceKm != null && (
+              <p className="text-slate-400 text-xs mb-4">Estimated distance: <strong>{distanceKm} km</strong></p>
+            )}
             <button onClick={handleQuoteSubmit} disabled={loading}
               className="w-full py-3.5 rounded-xl bg-[#1B3A6B] text-white font-bold text-sm flex items-center justify-center gap-2 hover:bg-[#224889] transition disabled:opacity-60">
               {loading ? <Loader2 size={16} className="animate-spin" /> : "Send Quote Request"}
             </button>
-            <button onClick={() => setStep("zone")} className="w-full mt-2 py-2 text-sm text-slate-400 hover:text-slate-600 transition">← Change zone</button>
+            <button onClick={() => setStep("details")} className="w-full mt-2 py-2 text-sm text-slate-400 hover:text-slate-600 transition">← Change details</button>
           </div>
         )}
 
@@ -434,7 +420,10 @@ export default function BookingWizard() {
             <div className="bg-gradient-to-br from-[#1B4D2E] to-[#1B3A6B] rounded-2xl p-5 text-white mb-6">
               <p className="text-white/60 text-xs uppercase tracking-widest mb-1">{BAND_LABELS[band!]} · {passengers} pax · {TIER_LABELS[customerTier]}</p>
               <p className="text-4xl font-bold mb-1">{fare ? formatRand(fare) : "—"}</p>
-              <p className="text-white/60 text-sm">Per trip · {TRIP_TYPE_LABELS[tripType]}</p>
+              <p className="text-white/60 text-sm">
+                Per trip · {TRIP_TYPE_LABELS[tripType]}
+                {distanceKm != null && <> · {distanceKm} km</>}
+              </p>
             </div>
 
             <h2 className="font-semibold text-slate-800 text-lg mb-2">Choose a Date</h2>
@@ -466,7 +455,7 @@ export default function BookingWizard() {
               className="w-full mt-6 py-3.5 rounded-xl bg-[#1B4D2E] text-white font-bold text-sm flex items-center justify-center gap-2 hover:bg-[#246038] transition disabled:opacity-50">
               {loading ? <Loader2 size={16} className="animate-spin" /> : <><Check size={16} /> Confirm Booking Request</>}
             </button>
-            <button onClick={() => setStep("zone")} className="w-full mt-2 py-2 text-sm text-slate-400 hover:text-slate-600 transition">← Change zone</button>
+            <button onClick={() => setStep("details")} className="w-full mt-2 py-2 text-sm text-slate-400 hover:text-slate-600 transition">← Change details</button>
           </div>
         )}
 

@@ -29,7 +29,7 @@ const services = [
 
 const steps = [
   { n: "01", title: "Fill in your details", desc: "Your name, contact info, pickup and drop-off addresses." },
-  { n: "02", title: "Choose your zone & see your fare", desc: "Select the distance band — pricing is shown instantly, no surprises." },
+  { n: "02", title: "See your fare instantly", desc: "We measure the distance from your addresses — pricing is shown instantly, no surprises." },
   { n: "03", title: "Pick a date", desc: "Choose from available dates. The driver confirms within the hour." },
 ];
 

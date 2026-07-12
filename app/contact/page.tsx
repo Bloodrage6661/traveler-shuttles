@@ -120,7 +120,7 @@ export default function ContactPage() {
             <div className="space-y-5">
               {/* WhatsApp */}
               <a
-                href="https://wa.me/27000000000"
+                href="https://wa.me/27766432418"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-4 bg-[#1B4D2E] hover:bg-[#246038] text-white rounded-2xl p-5 transition-colors group"
@@ -138,7 +138,7 @@ export default function ContactPage() {
 
               {/* Phone */}
               <a
-                href="tel:+27000000000"
+                href="tel:+27766432418"
                 className="flex items-center gap-4 bg-white border border-slate-100 shadow-sm rounded-2xl p-5 hover:shadow-md hover:border-[#C9A84C]/40 transition-all group"
                 aria-label="Call us"
               >
@@ -146,7 +146,7 @@ export default function ContactPage() {
                   <Phone size={20} aria-hidden="true" />
                 </div>
                 <div>
-                  <p className="font-semibold text-slate-900">+27 00 000 0000</p>
+                  <p className="font-semibold text-slate-900">076 643 2418</p>
                   <p className="text-slate-400 text-sm">Available 24/7</p>
                 </div>
               </a>
