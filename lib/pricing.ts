@@ -24,6 +24,22 @@ export function getFare(band: PricingBand, passengers: number, tier: CustomerTie
   return base * passengers;
 }
 
+// Surcharge added to the fare for trips on a Saturday or Sunday.
+export const WEEKEND_SURCHARGE = 0.05;
+
+// dateStr is "YYYY-MM-DD". Parsed as a local calendar date so the weekday is correct.
+export function isWeekendDate(dateStr: string): boolean {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const day = new Date(y, m - 1, d).getDay(); // 0 = Sunday, 6 = Saturday
+  return day === 0 || day === 6;
+}
+
+// Applies the weekend surcharge when the trip date falls on a Sat/Sun.
+export function applyWeekendSurcharge(fare: number | null, dateStr: string | null): number | null {
+  if (fare == null || !dateStr || !isWeekendDate(dateStr)) return fare;
+  return Math.round(fare * (1 + WEEKEND_SURCHARGE));
+}
+
 export function formatRand(amount: number) {
   return `R ${amount.toLocaleString("en-ZA")}`;
 }

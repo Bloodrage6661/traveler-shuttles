@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Plane, Car, Users, Phone, Mail, User, ChevronRight, Check, Loader2, Clock } from "lucide-react";
-import { formatRand, BAND_LABELS, TIER_LABELS, TIER_DESCRIPTIONS, type PricingBand, type CustomerTier } from "@/lib/pricing";
+import { formatRand, applyWeekendSurcharge, isWeekendDate, WEEKEND_SURCHARGE, BAND_LABELS, TIER_LABELS, TIER_DESCRIPTIONS, type PricingBand, type CustomerTier } from "@/lib/pricing";
 import { useAuth } from "@/lib/auth";
 import AddressAutocomplete, { type SelectedPlace } from "@/components/AddressAutocomplete";
 
@@ -180,6 +180,10 @@ export default function BookingWizard() {
   // Result
   const [bookingRef, setBookingRef] = useState<string | null>(null);
 
+  // Weekend (Sat/Sun) trips get a surcharge once a date is chosen.
+  const weekendApplies = selectedDate ? isWeekendDate(selectedDate) : false;
+  const finalFare = applyWeekendSurcharge(fare, selectedDate);
+
   const stepIndex: Record<Step, number> = { details: 0, price: 1, calendar: 2, submitted: 3 };
   const currentStep = stepIndex[step];
 
@@ -238,7 +242,7 @@ export default function BookingWizard() {
           customerTier,
           userId: user?.id ?? null,
           pricingBand: band,
-          fareZar: fare,
+          fareZar: finalFare,
           preferredDate: selectedDate,
           preferredTimeWindow: timeWindow,
         }),
@@ -419,11 +423,16 @@ export default function BookingWizard() {
             {/* Fare summary */}
             <div className="bg-gradient-to-br from-[#1B4D2E] to-[#1B3A6B] rounded-2xl p-5 text-white mb-6">
               <p className="text-white/60 text-xs uppercase tracking-widest mb-1">{BAND_LABELS[band!]} · {passengers} pax · {TIER_LABELS[customerTier]}</p>
-              <p className="text-4xl font-bold mb-1">{fare ? formatRand(fare) : "—"}</p>
+              <p className="text-4xl font-bold mb-1">{finalFare ? formatRand(finalFare) : "—"}</p>
               <p className="text-white/60 text-sm">
                 Per trip · {TRIP_TYPE_LABELS[tripType]}
                 {distanceKm != null && <> · {distanceKm} km</>}
               </p>
+              {weekendApplies && fare != null && finalFare != null && (
+                <p className="mt-3 inline-flex items-center gap-1.5 bg-[#C9A84C]/25 text-[#F3E4BE] text-xs font-semibold px-3 py-1.5 rounded-full">
+                  <Clock size={12} /> Includes {Math.round(WEEKEND_SURCHARGE * 100)}% weekend surcharge (base {formatRand(fare)})
+                </p>
+              )}
             </div>
 
             <h2 className="font-semibold text-slate-800 text-lg mb-2">Choose a Date</h2>
