@@ -1,22 +1,12 @@
 export type PricingBand = "25km" | "50km" | "75km" | "custom";
 export type CustomerTier = "Corporate" | "Hotel/B&B" | "General";
 
-const RATES: Record<Exclude<PricingBand, "custom">, Record<CustomerTier, Record<number, number>>> = {
-  "25km": {
-    "Corporate": { 1: 338, 2: 328, 3: 318 },
-    "Hotel/B&B": { 1: 375, 2: 356, 3: 338 },
-    "General":   { 1: 405, 2: 385, 3: 365 },
-  },
-  "50km": {
-    "Corporate": { 1: 575, 2: 558, 3: 541 },
-    "Hotel/B&B": { 1: 624, 2: 594, 3: 563 },
-    "General":   { 1: 675, 2: 641, 3: 608 },
-  },
-  "75km": {
-    "Corporate": { 1: 863,   2: 837, 3: 811 },
-    "Hotel/B&B": { 1: 938,   2: 891, 3: 844 },
-    "General":   { 1: 1013, 2: 962, 3: 912 },
-  },
+// Base fare per distance band + customer tier — this is the price for ONE passenger.
+// The total fare is this base multiplied by the number of passengers (see getFare).
+const BASE_RATES: Record<Exclude<PricingBand, "custom">, Record<CustomerTier, number>> = {
+  "25km": { "Corporate": 338, "Hotel/B&B": 375, "General": 405 },
+  "50km": { "Corporate": 575, "Hotel/B&B": 624, "General": 675 },
+  "75km": { "Corporate": 863, "Hotel/B&B": 938, "General": 1013 },
 };
 
 export function getBand(distanceKm: number): PricingBand {
@@ -26,9 +16,12 @@ export function getBand(distanceKm: number): PricingBand {
   return "custom";
 }
 
+// Fare scales linearly with passengers: 1 pax = base, 2 pax = 2×, 3 pax = 3×, etc.
 export function getFare(band: PricingBand, passengers: number, tier: CustomerTier = "General"): number | null {
   if (band === "custom") return null;
-  return RATES[band][tier][passengers] ?? null;
+  const base = BASE_RATES[band][tier];
+  if (base == null) return null;
+  return base * passengers;
 }
 
 export function formatRand(amount: number) {
