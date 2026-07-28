@@ -19,7 +19,7 @@ export default function ForgotPasswordPage() {
     setLoading(true);
     const sb = getSupabaseBrowser();
     const { error: err } = await sb.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
+      redirectTo: `${window.location.origin}/reset-password`,
     });
     setLoading(false);
 

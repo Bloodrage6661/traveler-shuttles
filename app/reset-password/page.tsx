@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plane, Lock, Eye, EyeOff, ArrowRight, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { getSupabaseBrowser } from "@/lib/supabase";
-import type { User } from "@supabase/supabase-js";
+import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 
 type Phase = "checking" | "ready" | "invalid" | "done";
 
@@ -18,13 +18,41 @@ export default function ResetPasswordPage() {
   const [loading,   setLoading]   = useState(false);
   const [error,     setError]     = useState("");
 
-  // The reset link routes through /auth/callback, which exchanges the code and
-  // sets a recovery session cookie. If there's a valid user here, allow the reset.
+  // The Supabase client processes the recovery token from the URL asynchronously
+  // on load, then establishes a session. We watch for that session rather than
+  // checking once (which races the client and would wrongly show "invalid").
   useEffect(() => {
     const sb = getSupabaseBrowser();
-    sb.auth.getUser().then((res: { data: { user: User | null } }) => {
-      setPhase(res.data.user ? "ready" : "invalid");
+
+    // If Supabase redirected here with an error (link expired, invalid, or already
+    // used), it appears in the URL hash/query — show the expired state immediately.
+    const raw = window.location.hash.replace(/^#/, "") || window.location.search.replace(/^\?/, "");
+    const params = new URLSearchParams(raw);
+    if (params.get("error") || params.get("error_code") || params.get("error_description")) {
+      setPhase("invalid");
+      return;
+    }
+
+    let settled = false;
+    const markReady = () => { settled = true; setPhase("ready"); };
+
+    const { data: { subscription } } = sb.auth.onAuthStateChange(
+      (_event: AuthChangeEvent, session: Session | null) => { if (session) markReady(); }
+    );
+
+    const check = (): Promise<boolean> =>
+      sb.auth.getSession().then((res: { data: { session: Session | null } }) => {
+        if (res.data.session) { markReady(); return true; }
+        return false;
+      });
+
+    // Check now, then once more after giving the client time to exchange the token.
+    void check().then((ok: boolean) => {
+      if (ok) return;
+      setTimeout(() => { void check().then((ok2: boolean) => { if (!ok2 && !settled) setPhase("invalid"); }); }, 2500);
     });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const submit = async (e: React.FormEvent) => {
