@@ -25,7 +25,17 @@ export default function LoginPage() {
     const { error: err } = await sb.auth.signInWithPassword({ email, password });
     setLoading(false);
 
-    if (err) { setError("Incorrect email or password."); return; }
+    if (err) {
+      const m = (err.message ?? "").toLowerCase();
+      if (m.includes("not confirmed") || m.includes("confirm your")) {
+        setError("Your email isn't confirmed yet. Check your inbox for the verification link, or reset your password to confirm and set a new one.");
+      } else if (m.includes("invalid login") || m.includes("credentials")) {
+        setError("Incorrect email or password.");
+      } else {
+        setError(err.message || "Could not sign in. Please try again.");
+      }
+      return;
+    }
     router.push("/dashboard");
     router.refresh();
   };
