@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Plane, Phone, Mail, MessageCircle } from "lucide-react";
+import Image from "next/image";
+import { Phone, Mail, MessageCircle } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -11,14 +12,14 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           {/* Brand */}
           <div className="lg:col-span-2">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center">
-                <Plane size={17} className="text-white" />
-              </div>
-              <div>
-                <p className="font-bold text-sm leading-tight">Traveler Shuttles and Tours</p>
-                <p className="text-white/40 text-[11px] mt-0.5">South Africa</p>
-              </div>
+            <div className="mb-4">
+              <Image
+                src="/logo-white.png"
+                alt="Traveler Shuttles and Tours"
+                width={280}
+                height={280}
+                className="h-24 w-auto"
+              />
             </div>
             <p className="text-white/55 text-sm leading-relaxed max-w-xs">
               Professional shuttle transfers and private chauffeur service across the Western Cape.

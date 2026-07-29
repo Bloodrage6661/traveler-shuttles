@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plane, Mail, Lock, Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
+import Image from "next/image";
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
 import { getSupabaseBrowser } from "@/lib/supabase";
 
 export default function LoginPage() {
@@ -36,14 +37,8 @@ export default function LoginPage() {
         className="hidden lg:flex flex-col justify-between p-12 text-white"
         style={{ background: "linear-gradient(160deg, #0F2B1A 0%, #1B4D2E 50%, #1B3A6B 100%)" }}
       >
-        <Link href="/" className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center">
-            <Plane size={17} className="text-white" />
-          </div>
-          <div>
-            <p className="font-bold text-sm leading-tight">Traveler Shuttles and Tours</p>
-            <p className="text-white/40 text-[11px] mt-0.5">South Africa</p>
-          </div>
+        <Link href="/" aria-label="Traveler Shuttles and Tours — home">
+          <Image src="/logo-white.png" alt="Traveler Shuttles and Tours" width={280} height={280} priority className="h-24 w-auto" />
         </Link>
 
         <div>
@@ -57,9 +52,8 @@ export default function LoginPage() {
       {/* Right panel */}
       <div className="flex items-center justify-center px-4 py-16 bg-slate-50">
         <div className="w-full max-w-md">
-          <Link href="/" className="flex items-center gap-2 mb-8 lg:hidden">
-            <Plane size={18} className="text-[#1B4D2E]" />
-            <span className="font-bold text-sm text-slate-800">Traveler Shuttles</span>
+          <Link href="/" className="block mb-8 lg:hidden" aria-label="Traveler Shuttles and Tours — home">
+            <Image src="/logo.png" alt="Traveler Shuttles and Tours" width={200} height={200} className="h-16 w-auto" />
           </Link>
 
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8">

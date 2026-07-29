@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   Plane, CalendarDays, Clock, MapPin, Users, LogOut,
@@ -176,14 +177,9 @@ export default function DashboardPage() {
       {/* Header */}
       <header style={{ background: "linear-gradient(90deg, #133820, #132950)" }} className="px-6 py-4 sticky top-0 z-40">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-              <Plane size={15} className="text-white" />
-            </div>
-            <div>
-              <p className="text-white font-bold text-sm leading-none">Traveler Shuttles</p>
-              <p className="text-white/40 text-[10px] mt-0.5">My Dashboard</p>
-            </div>
+          <Link href="/" className="flex items-center gap-3" aria-label="Traveler Shuttles and Tours — home">
+            <Image src="/logo-white.png" alt="Traveler Shuttles and Tours" width={160} height={160} className="h-14 w-auto" />
+            <span className="text-white/40 text-[10px] border-l border-white/20 pl-3">My Dashboard</span>
           </Link>
           <button onClick={logout} className="flex items-center gap-1.5 text-white/60 hover:text-white text-xs transition-colors">
             <LogOut size={13} /> Sign out
