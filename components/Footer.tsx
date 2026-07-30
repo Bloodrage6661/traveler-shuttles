@@ -16,9 +16,9 @@ export default function Footer() {
               <Image
                 src="/logo-white.png"
                 alt="Traveler Shuttles and Tours"
-                width={280}
-                height={280}
-                className="h-24 w-auto"
+                width={420}
+                height={420}
+                className="h-32 w-auto"
               />
             </div>
             <p className="text-white/55 text-sm leading-relaxed max-w-xs">

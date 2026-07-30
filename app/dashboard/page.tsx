@@ -178,7 +178,7 @@ export default function DashboardPage() {
       <header style={{ background: "linear-gradient(90deg, #133820, #132950)" }} className="px-6 py-4 sticky top-0 z-40">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3" aria-label="Traveler Shuttles and Tours — home">
-            <Image src="/logo-white.png" alt="Traveler Shuttles and Tours" width={160} height={160} className="h-14 w-auto" />
+            <Image src="/logo-white.png" alt="Traveler Shuttles and Tours" width={220} height={220} className="h-16 w-auto" />
             <span className="text-white/40 text-[10px] border-l border-white/20 pl-3">My Dashboard</span>
           </Link>
           <button onClick={logout} className="flex items-center gap-1.5 text-white/60 hover:text-white text-xs transition-colors">

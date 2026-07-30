@@ -80,7 +80,7 @@ export default function ResetPasswordPage() {
         style={{ background: "linear-gradient(160deg, #0F2B1A 0%, #1B4D2E 50%, #1B3A6B 100%)" }}
       >
         <Link href="/" aria-label="Traveler Shuttles and Tours — home">
-          <Image src="/logo-white.png" alt="Traveler Shuttles and Tours" width={280} height={280} priority className="h-24 w-auto" />
+          <Image src="/logo-white.png" alt="Traveler Shuttles and Tours" width={420} height={420} priority className="h-32 w-auto" />
         </Link>
 
         <div>
@@ -95,7 +95,7 @@ export default function ResetPasswordPage() {
       <div className="flex items-center justify-center px-4 py-16 bg-slate-50">
         <div className="w-full max-w-md">
           <Link href="/" className="block mb-8 lg:hidden" aria-label="Traveler Shuttles and Tours — home">
-            <Image src="/logo.png" alt="Traveler Shuttles and Tours" width={200} height={200} className="h-16 w-auto" />
+            <Image src="/logo.png" alt="Traveler Shuttles and Tours" width={280} height={280} className="h-20 w-auto" />
           </Link>
 
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8">
