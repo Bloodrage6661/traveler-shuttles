@@ -3,7 +3,6 @@ import crypto from "crypto";
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "admin123";
 const SECRET = process.env.COOKIE_SECRET ?? "traveler-shuttles-secret-2026";
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
 
 function sign(value: string) {
   const hmac = crypto.createHmac("sha256", SECRET);
@@ -35,7 +34,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE() {
-  const res = NextResponse.redirect(`${BASE_URL}/admin`);
-  res.cookies.delete("admin_session");
+  const res = NextResponse.json({ ok: true });
+  // Expire the cookie explicitly with the same path it was set on, so the browser clears it.
+  res.cookies.set("admin_session", "", { httpOnly: true, maxAge: 0, sameSite: "lax", path: "/" });
   return res;
 }
