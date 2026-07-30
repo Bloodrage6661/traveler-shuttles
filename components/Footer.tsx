@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Phone, Mail, MessageCircle } from "lucide-react";
+import { Phone, Mail, MessageCircle, Lock } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -88,7 +88,12 @@ export default function Footer() {
 
         <div className="border-t border-white/10 mt-12 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-white/35 text-xs">© 2026 Traveler Shuttles and Tours. All rights reserved.</p>
-          <p className="text-white/25 text-xs">Cape Town, Western Cape, South Africa</p>
+          <div className="flex items-center gap-4">
+            <Link href="/admin" className="inline-flex items-center gap-1.5 text-white/40 hover:text-[#C9A84C] text-xs font-medium transition-colors">
+              <Lock size={11} aria-hidden="true" /> Driver Login
+            </Link>
+            <span className="text-white/25 text-xs">Cape Town, Western Cape, South Africa</span>
+          </div>
         </div>
       </div>
     </footer>
