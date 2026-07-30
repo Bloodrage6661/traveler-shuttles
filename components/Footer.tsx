@@ -90,7 +90,7 @@ export default function Footer() {
           <p className="text-white/35 text-xs">© 2026 Traveler Shuttles and Tours. All rights reserved.</p>
           <div className="flex items-center gap-4">
             <Link href="/admin" className="inline-flex items-center gap-1.5 text-white/40 hover:text-[#C9A84C] text-xs font-medium transition-colors">
-              <Lock size={11} aria-hidden="true" /> Driver Login
+              <Lock size={11} aria-hidden="true" /> Staff Login
             </Link>
             <span className="text-white/25 text-xs">Cape Town, Western Cape, South Africa</span>
           </div>
