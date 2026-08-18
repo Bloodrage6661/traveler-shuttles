@@ -12,6 +12,13 @@ const DRIVER_EMAILS = (process.env.DRIVER_EMAIL ?? "")
   .map((e) => e.trim())
   .filter(Boolean);
 
+// The calendar account that confirmed-trip invites are sent to (so they land on
+// that account's calendar). Falls back to the driver emails if unset.
+const CALENDAR_EMAILS = (process.env.CALENDAR_INVITE_EMAIL ?? "")
+  .split(",")
+  .map((e) => e.trim())
+  .filter(Boolean);
+
 const BRAND = {
   green: "#1B4D2E",
   blue: "#1B3A6B",
@@ -228,8 +235,9 @@ export async function sendClientDeclined(booking: {
 // "Add to Google Calendar" button. With Gmail set to auto-add invitations, the
 // event lands on the driver's calendar automatically. No Google Cloud needed.
 export async function sendDriverCalendarInvite(booking: InviteBooking) {
-  if (DRIVER_EMAILS.length === 0) return;
-  const ics = buildBookingIcs(booking, DRIVER_EMAILS);
+  const recipients = CALENDAR_EMAILS.length > 0 ? CALENDAR_EMAILS : DRIVER_EMAILS;
+  if (recipients.length === 0) return;
+  const ics = buildBookingIcs(booking, recipients);
   if (!ics) return;
 
   const ref = booking.id.slice(0, 8).toUpperCase();
@@ -261,13 +269,13 @@ export async function sendDriverCalendarInvite(booking: InviteBooking) {
 
   await getResend().emails.send({
     from: "Traveler Shuttles <noreply@travelershuttlesandtours.co.za>",
-    to: DRIVER_EMAILS,
+    to: recipients,
     subject: `Confirmed trip #${ref} — ${booking.clientName} (${booking.preferredDate ?? "TBC"})`,
     html: layout(body),
     attachments: [
       {
         filename: `trip-${ref}.ics`,
-        content: Buffer.from(ics, "utf-8").toString("base64"),
+        content: Buffer.from(ics, "utf-8"),
         contentType: "text/calendar; method=REQUEST; charset=UTF-8",
       },
     ],
