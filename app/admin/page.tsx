@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { LogOut, Check, X, CalendarDays, Clock, Loader2, Users, MapPin, Phone, Mail, ChevronDown, ChevronUp } from "lucide-react";
+import { formatPickupTime } from "@/lib/time";
 
 type BookingStatus = "pending" | "confirmed" | "cancelled";
 
@@ -30,12 +31,6 @@ const STATUS_COLORS: Record<BookingStatus, string> = {
   cancelled: "bg-red-100 text-red-600",
 };
 
-const TIME_LABELS: Record<string, string> = {
-  morning: "Morning (6am–10am)",
-  midday: "Midday (10am–2pm)",
-  afternoon: "Afternoon (2pm–6pm)",
-  evening: "Evening (6pm–10pm)",
-};
 
 // ─── Login ────────────────────────────────────────────────────────────────────
 
@@ -203,7 +198,7 @@ function BookingCard({ booking, onUpdate }: { booking: Booking; onUpdate: () => 
               <span className="flex items-center gap-1"><CalendarDays size={11} />{booking.preferred_date}</span>
             )}
             {booking.preferred_time_window && (
-              <span className="flex items-center gap-1"><Clock size={11} />{TIME_LABELS[booking.preferred_time_window]}</span>
+              <span className="flex items-center gap-1"><Clock size={11} />{formatPickupTime(booking.preferred_time_window)}</span>
             )}
             <span className="flex items-center gap-1"><Users size={11} />{booking.passengers} pax</span>
             <span className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded text-xs font-medium">{booking.customer_tier}</span>

@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { formatPickupTime } from "./time";
 
 function getResend() {
   return new Resend(process.env.RESEND_API_KEY!);
@@ -74,7 +75,7 @@ export async function sendDriverNotification(booking: {
   const ref = booking.id.slice(0, 8).toUpperCase();
   const fare = booking.fareZar ? `R ${booking.fareZar.toLocaleString("en-ZA")}` : "Custom quote required";
   const date = booking.preferredDate ?? "Not specified";
-  const window = booking.preferredTimeWindow ?? "Not specified";
+  const pickupTimeLabel = formatPickupTime(booking.preferredTimeWindow);
 
   const acceptUrl  = `${BASE_URL}/api/confirm/${booking.confirmToken}?action=accept`;
   const declineUrl = `${BASE_URL}/api/confirm/${booking.confirmToken}?action=decline`;
@@ -94,7 +95,7 @@ export async function sendDriverNotification(booking: {
       ${row("Customer type", booking.customerTier)}
       ${row("Fare", fare)}
       ${row("Date", date)}
-      ${row("Time window", window)}
+      ${row("Pickup time", pickupTimeLabel)}
     </table>
     <table cellpadding="0" cellspacing="0">
       <tr>
@@ -164,12 +165,6 @@ export async function sendClientConfirmed(booking: {
 }) {
   const ref = booking.id.slice(0, 8).toUpperCase();
   const fare = booking.fareZar ? `R ${booking.fareZar.toLocaleString("en-ZA")}` : "To be confirmed";
-  const windowLabels: Record<string, string> = {
-    morning: "Morning (6am–10am)",
-    midday: "Midday (10am–2pm)",
-    afternoon: "Afternoon (2pm–6pm)",
-    evening: "Evening (6pm–10pm)",
-  };
 
   const body = `
     <h2 style="margin:0 0 4px;font-size:20px;color:${BRAND.dark};">Booking Confirmed!</h2>
@@ -183,7 +178,7 @@ export async function sendClientConfirmed(booking: {
       ${row("Drop-off", booking.dropoffAddress)}
       ${row("Passengers", String(booking.passengers))}
       ${row("Date", booking.preferredDate ?? "TBC")}
-      ${row("Time window", booking.preferredTimeWindow ? windowLabels[booking.preferredTimeWindow] : "TBC")}
+      ${row("Pickup time", formatPickupTime(booking.preferredTimeWindow))}
       ${row("Fare", fare)}
     </table>
     <p style="font-size:14px;color:#666;">

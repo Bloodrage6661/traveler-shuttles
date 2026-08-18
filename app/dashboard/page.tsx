@@ -9,6 +9,7 @@ import {
   ChevronDown, ChevronUp, ArrowRight, Loader2, CheckCircle2, XCircle, AlertCircle,
 } from "lucide-react";
 import { getSupabaseBrowser } from "@/lib/supabase";
+import { formatPickupTime } from "@/lib/time";
 import type { User } from "@supabase/supabase-js";
 
 type BookingStatus = "pending" | "confirmed" | "cancelled";
@@ -35,12 +36,6 @@ const STATUS_CONFIG: Record<BookingStatus, { icon: React.ElementType; label: str
   cancelled: { icon: XCircle,      label: "Cancelled",             color: "text-red-600",    bg: "bg-red-50 border-red-200" },
 };
 
-const TIME_LABELS: Record<string, string> = {
-  morning: "Morning (6am–10am)",
-  midday: "Midday (10am–2pm)",
-  afternoon: "Afternoon (2pm–6pm)",
-  evening: "Evening (6pm–10pm)",
-};
 
 const TRIP_LABELS: Record<string, string> = {
   to_airport: "To Airport",
@@ -82,7 +77,7 @@ function BookingCard({ booking }: { booking: Booking }) {
               )}
               {booking.preferred_time_window && (
                 <span className="flex items-center gap-1.5">
-                  <Clock size={11} aria-hidden="true" /> {TIME_LABELS[booking.preferred_time_window]}
+                  <Clock size={11} aria-hidden="true" /> {formatPickupTime(booking.preferred_time_window)}
                 </span>
               )}
               <span className="flex items-center gap-1.5">

@@ -3,11 +3,11 @@
 import { useState } from "react";
 import { Plane, Car, Users, Phone, Mail, User, ChevronRight, Check, Loader2, Clock } from "lucide-react";
 import { formatRand, applyWeekendSurcharge, isWeekendDate, WEEKEND_SURCHARGE, BAND_LABELS, TIER_LABELS, TIER_DESCRIPTIONS, type PricingBand, type CustomerTier } from "@/lib/pricing";
+import { PICKUP_MIN, PICKUP_MAX, isPickupTimeInRange, formatPickupTime } from "@/lib/time";
 import { useAuth } from "@/lib/auth";
 import AddressAutocomplete, { type SelectedPlace } from "@/components/AddressAutocomplete";
 
 type TripType = "to_airport" | "from_airport" | "point_to_point";
-type TimeWindow = "morning" | "midday" | "afternoon" | "evening";
 type Step = "details" | "price" | "calendar" | "submitted";
 
 const TRIP_TYPE_LABELS: Record<TripType, string> = {
@@ -15,13 +15,6 @@ const TRIP_TYPE_LABELS: Record<TripType, string> = {
   from_airport:   "From Airport",
   point_to_point: "Point-to-point",
 };
-
-const TIME_WINDOWS: { value: TimeWindow; label: string; sub: string }[] = [
-  { value: "morning",   label: "Morning",   sub: "6am – 10am" },
-  { value: "midday",    label: "Midday",    sub: "10am – 2pm" },
-  { value: "afternoon", label: "Afternoon", sub: "2pm – 6pm" },
-  { value: "evening",   label: "Evening",   sub: "6pm – 10pm" },
-];
 
 function Label({ children }: { children: React.ReactNode }) {
   return <label className="block text-sm font-medium text-slate-700 mb-1.5">{children}</label>;
@@ -175,7 +168,7 @@ export default function BookingWizard() {
 
   // Step 3
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [timeWindow,   setTimeWindow]   = useState<TimeWindow | null>(null);
+  const [pickupTime,   setPickupTime]   = useState<string>("");
 
   // Result
   const [bookingRef, setBookingRef] = useState<string | null>(null);
@@ -224,7 +217,8 @@ export default function BookingWizard() {
 
   const handleSubmit = async () => {
     setError(null);
-    if (!selectedDate || !timeWindow) { setError("Please select a date and time window."); return; }
+    if (!selectedDate || !pickupTime) { setError("Please select a date and pickup time."); return; }
+    if (!isPickupTimeInRange(pickupTime)) { setError("Pickup time must be between 4:00 AM and 6:00 PM."); return; }
     setLoading(true);
     try {
       const res = await fetch("/api/bookings", {
@@ -244,7 +238,7 @@ export default function BookingWizard() {
           pricingBand: band,
           fareZar: finalFare,
           preferredDate: selectedDate,
-          preferredTimeWindow: timeWindow,
+          preferredTimeWindow: pickupTime,
         }),
       });
       const data = await res.json();
@@ -442,25 +436,30 @@ export default function BookingWizard() {
 
             {selectedDate && (
               <div className="mt-5">
-                <Label>Preferred time window</Label>
-                <div className="grid grid-cols-2 gap-2 mt-1">
-                  {TIME_WINDOWS.map(w => (
-                    <button key={w.value} onClick={() => setTimeWindow(w.value)}
-                      className={`p-3 rounded-xl border text-left transition
-                        ${timeWindow === w.value ? "bg-[#1B3A6B] text-white border-[#1B3A6B]" : "border-slate-200 hover:border-[#1B3A6B]"}`}>
-                      <div className="flex items-center gap-2">
-                        <Clock size={13} />
-                        <span className="font-medium text-sm">{w.label}</span>
-                      </div>
-                      <p className={`text-xs mt-0.5 ${timeWindow === w.value ? "text-white/70" : "text-slate-400"}`}>{w.sub}</p>
-                    </button>
-                  ))}
+                <Label>Preferred pickup time</Label>
+                <div className="relative">
+                  <Clock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" />
+                  <input
+                    type="time"
+                    value={pickupTime}
+                    min={PICKUP_MIN}
+                    max={PICKUP_MAX}
+                    step={900}
+                    onChange={e => setPickupTime(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pl-9 text-sm text-slate-800 outline-none transition focus:border-[#1B3A6B] focus:ring-2 focus:ring-[#1B3A6B]/10"
+                  />
                 </div>
+                <p className="text-xs text-slate-400 mt-1.5">
+                  Pickups available between 4:00 AM and 6:00 PM.
+                  {pickupTime && isPickupTimeInRange(pickupTime) && (
+                    <span className="text-[#1B4D2E] font-medium"> · You&apos;ve selected {formatPickupTime(pickupTime)}</span>
+                  )}
+                </p>
               </div>
             )}
 
             {error && <p className="text-red-500 text-sm mt-4">{error}</p>}
-            <button onClick={handleSubmit} disabled={loading || !selectedDate || !timeWindow}
+            <button onClick={handleSubmit} disabled={loading || !selectedDate || !pickupTime}
               className="w-full mt-6 py-3.5 rounded-xl bg-[#1B4D2E] text-white font-bold text-sm flex items-center justify-center gap-2 hover:bg-[#246038] transition disabled:opacity-50">
               {loading ? <Loader2 size={16} className="animate-spin" /> : <><Check size={16} /> Confirm Booking Request</>}
             </button>
