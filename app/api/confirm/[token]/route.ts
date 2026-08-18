@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { sendClientConfirmed, sendClientDeclined } from "@/lib/email";
+import { sendClientConfirmed, sendClientDeclined, sendDriverCalendarInvite } from "@/lib/email";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
 
@@ -35,17 +35,33 @@ export async function GET(
   if (action === "accept") {
     await db.from("bookings").update({ status: "confirmed" }).eq("id", booking.id);
 
-    await sendClientConfirmed({
-      id: booking.id,
-      clientName: booking.client_name,
-      clientEmail: booking.client_email,
-      pickupAddress: booking.pickup_address,
-      dropoffAddress: booking.dropoff_address,
-      passengers: booking.passengers,
-      fareZar: booking.fare_zar,
-      preferredDate: booking.preferred_date,
-      preferredTimeWindow: booking.preferred_time_window,
-    });
+    await Promise.allSettled([
+      sendClientConfirmed({
+        id: booking.id,
+        clientName: booking.client_name,
+        clientEmail: booking.client_email,
+        pickupAddress: booking.pickup_address,
+        dropoffAddress: booking.dropoff_address,
+        passengers: booking.passengers,
+        fareZar: booking.fare_zar,
+        preferredDate: booking.preferred_date,
+        preferredTimeWindow: booking.preferred_time_window,
+      }),
+      // Add the confirmed trip to the driver's calendar (.ics invite + button).
+      sendDriverCalendarInvite({
+        id: booking.id,
+        clientName: booking.client_name,
+        clientCell: booking.client_cell,
+        clientEmail: booking.client_email,
+        pickupAddress: booking.pickup_address,
+        dropoffAddress: booking.dropoff_address,
+        passengers: booking.passengers,
+        tripType: booking.trip_type,
+        fareZar: booking.fare_zar,
+        preferredDate: booking.preferred_date,
+        preferredTimeWindow: booking.preferred_time_window,
+      }),
+    ]);
 
     return NextResponse.redirect(`${BASE_URL}/confirm/accepted`);
   } else {

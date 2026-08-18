@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { formatPickupTime } from "./time";
+import { buildBookingIcs, googleCalendarLink, type InviteBooking } from "./calendar-invite";
 
 function getResend() {
   return new Resend(process.env.RESEND_API_KEY!);
@@ -220,5 +221,55 @@ export async function sendClientDeclined(booking: {
     to: booking.clientEmail,
     subject: `Booking update #${ref}`,
     html: layout(body),
+  });
+}
+
+// Sends the driver(s) a calendar invite (.ics) for a confirmed trip, plus an
+// "Add to Google Calendar" button. With Gmail set to auto-add invitations, the
+// event lands on the driver's calendar automatically. No Google Cloud needed.
+export async function sendDriverCalendarInvite(booking: InviteBooking) {
+  if (DRIVER_EMAILS.length === 0) return;
+  const ics = buildBookingIcs(booking, DRIVER_EMAILS);
+  if (!ics) return;
+
+  const ref = booking.id.slice(0, 8).toUpperCase();
+  const gcal = googleCalendarLink(booking);
+  const when = `${booking.preferredDate ?? "TBC"} · ${formatPickupTime(booking.preferredTimeWindow)}`;
+
+  const body = `
+    <h2 style="margin:0 0 4px;font-size:20px;color:${BRAND.dark};">Trip Confirmed — Add to Calendar</h2>
+    <p style="margin:0 0 20px;color:#666;font-size:14px;">Reference: <strong>#${ref}</strong></p>
+    <table cellpadding="0" cellspacing="0" style="width:100%;margin-bottom:20px;">
+      ${row("Client", booking.clientName)}
+      ${booking.clientCell ? row("Cell", booking.clientCell) : ""}
+      ${row("Pickup", booking.pickupAddress)}
+      ${row("Drop-off", booking.dropoffAddress)}
+      ${row("When", when)}
+      ${row("Passengers", String(booking.passengers))}
+    </table>
+    <p style="font-size:14px;color:#333;line-height:1.6;">
+      The calendar invite is attached. If your Google Calendar is set to
+      <strong>automatically add invitations</strong>, this trip is already on your calendar.
+      Otherwise, tap the button below.
+    </p>
+    ${gcal ? `<table cellpadding="0" cellspacing="0" style="margin-top:12px;"><tr><td>
+      <a href="${gcal}" style="display:inline-block;background:${BRAND.blue};color:#fff;font-weight:700;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;">
+        📅 Add to Google Calendar
+      </a>
+    </td></tr></table>` : ""}
+  `;
+
+  await getResend().emails.send({
+    from: "Traveler Shuttles <noreply@travelershuttlesandtours.co.za>",
+    to: DRIVER_EMAILS,
+    subject: `Confirmed trip #${ref} — ${booking.clientName} (${booking.preferredDate ?? "TBC"})`,
+    html: layout(body),
+    attachments: [
+      {
+        filename: `trip-${ref}.ics`,
+        content: Buffer.from(ics, "utf-8").toString("base64"),
+        contentType: "text/calendar; method=REQUEST; charset=UTF-8",
+      },
+    ],
   });
 }
