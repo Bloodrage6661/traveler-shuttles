@@ -3,7 +3,6 @@
 create type trip_type as enum ('to_airport', 'from_airport', 'point_to_point');
 create type customer_tier as enum ('Corporate', 'Hotel/B&B', 'General');
 create type pricing_band as enum ('25km', '50km', '75km', 'custom');
-create type time_window as enum ('morning', 'midday', 'afternoon', 'evening');
 create type booking_status as enum ('pending', 'confirmed', 'cancelled');
 
 create table bookings (
@@ -31,7 +30,7 @@ create table bookings (
 
   -- Schedule
   preferred_date        date,
-  preferred_time_window time_window,
+  preferred_time_window text,   -- stores an "HH:MM" pickup time (legacy rows may hold a window name)
 
   -- Status
   status                booking_status not null default 'pending',
