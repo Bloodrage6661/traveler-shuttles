@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import type { Metadata } from "next";
 import {
   Plane, Car, Building2, Hotel, MapPin, Users, Route, Star,
@@ -88,14 +87,6 @@ export default function HomePage() {
           }} aria-hidden="true" />
 
           <div className="relative z-10 max-w-4xl mx-auto text-center">
-            <Image
-              src="/logo-white.png"
-              alt="Traveler Shuttles and Tours"
-              width={760}
-              height={760}
-              priority
-              className="mx-auto w-auto h-48 sm:h-64 md:h-80 mb-6"
-            />
             <div className="inline-flex items-center gap-2 bg-white/10 border border-white/15 text-white/80 text-xs font-semibold tracking-[0.15em] uppercase px-4 py-2 rounded-full mb-8">
               <Plane size={12} aria-hidden="true" /> Cape Town International Airport Shuttle
             </div>
