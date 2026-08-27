@@ -43,16 +43,16 @@ export default function Navbar() {
         }}
       >
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-28 sm:h-32">
+          <div className="flex items-center justify-between h-32 sm:h-40">
             {/* Logo */}
             <Link href="/" className="flex items-center group" aria-label="Traveler Shuttles and Tours — home">
               <Image
                 src="/logo-white.png"
                 alt="Traveler Shuttles and Tours"
-                width={440}
-                height={440}
+                width={520}
+                height={520}
                 priority
-                className="h-24 sm:h-28 w-auto transition-transform group-hover:scale-105"
+                className="h-28 sm:h-36 w-auto transition-transform group-hover:scale-105"
               />
             </Link>
 
@@ -137,7 +137,7 @@ export default function Navbar() {
         )}
       </header>
       {/* Spacer for non-hero pages */}
-      {pathname !== "/" && <div className="h-28 sm:h-32" style={{ background: "linear-gradient(90deg, #133820 0%, #132950 100%)" }} />}
+      {pathname !== "/" && <div className="h-32 sm:h-40" style={{ background: "linear-gradient(90deg, #133820 0%, #132950 100%)" }} />}
     </>
   );
 }

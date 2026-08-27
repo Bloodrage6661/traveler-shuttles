@@ -77,7 +77,7 @@ export default function HomePage() {
       <main>
         {/* ── Hero ── */}
         <section
-          className="relative min-h-screen flex flex-col justify-center pt-16 pb-20 px-4 sm:px-6 overflow-hidden"
+          className="relative min-h-screen flex flex-col justify-start sm:justify-center pt-40 sm:pt-44 pb-20 px-4 sm:px-6 overflow-hidden"
           style={{ backgroundColor: "#0F2B1A" }}
           aria-labelledby="hero-heading"
         >
