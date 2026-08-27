@@ -44,10 +44,6 @@ const fleet = [
     name: "SUV", cap: "1–3 passengers", color: "from-[#1B3A6B] to-[#224889]",
     features: ["Extra luggage capacity", "Elevated ride comfort", "Perfect for family trips", "Premium finish"],
   },
-  {
-    name: "Minibus", cap: "Up to 8 passengers", color: "from-[#133820] to-[#132950]",
-    features: ["Group & event transfers", "High luggage volume", "Enquire for availability", "Coordinated service"],
-  },
 ];
 
 const testimonials = [
@@ -218,7 +214,7 @@ export default function HomePage() {
               <div className="w-12 h-0.5 bg-[#C9A84C] rounded mx-auto mb-4" aria-hidden="true" />
               <p className="text-slate-500 max-w-xl mx-auto">All vehicles are air-conditioned, well-maintained, and GPS tracked for your peace of mind.</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
               {fleet.map(({ name, cap, color, features }) => (
                 <div key={name} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden hover:shadow-md hover:border-[#C9A84C]/40 transition-all duration-200">
                   <div className={`h-44 bg-gradient-to-br ${color} flex items-center justify-center relative`} aria-hidden="true">
