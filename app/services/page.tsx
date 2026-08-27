@@ -1,6 +1,19 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { Plane, Building2, Hotel, MapPin, Users, Route, Car, ArrowRight, CheckCircle2 } from "lucide-react";
+import type { ElementType } from "react";
+import { Plane, Building2, Hotel, MapPin, Users, Route, ArrowRight, CheckCircle2 } from "lucide-react";
+
+type Service = {
+  icon: ElementType;
+  title: string;
+  subtitle: string;
+  desc: string;
+  detail: string;
+  tiers: string[];
+  points: string[];
+  color: string;
+  byRequest?: boolean;
+};
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
@@ -14,7 +27,7 @@ export const metadata: Metadata = {
   },
 };
 
-const services = [
+const services: Service[] = [
   {
     icon: Plane,
     title: "Airport Transfers",
@@ -32,7 +45,7 @@ const services = [
     desc: "Designed for businesses with regular transfer needs. Open a corporate account and enjoy preferential rates, monthly invoicing, and a dedicated service level that keeps your team moving professionally. Executive vehicles, punctual drivers, and zero-hassle coordination.",
     detail: "Suitable for employee airport transfers, client pickups, inter-office travel, and VIP guest transport. Account holders receive priority booking and a dedicated contact.",
     tiers: ["Corporate"],
-    points: ["Monthly invoicing", "Preferential rates", "Priority booking", "Dedicated account manager"],
+    points: ["1–3 passengers", "Monthly invoicing", "Preferential rates", "Priority booking", "Dedicated account manager"],
     color: "from-[#132950] to-[#1B3A6B]",
   },
   {
@@ -42,7 +55,7 @@ const services = [
     desc: "Hotels, guesthouses, and B&Bs that arrange transfers on behalf of their guests benefit from our hospitality partner programme. Coordinate multiple guest pickups and drop-offs under a single account with simplified billing.",
     detail: "We work directly with your front desk or concierge to ensure seamless guest experiences. Our drivers are professional, presentable, and familiar with the expectations of hospitality clients.",
     tiers: ["Hotel/B&B"],
-    points: ["Partner account rates", "Multi-guest coordination", "Concierge-level service", "Flexible billing"],
+    points: ["1–3 passengers", "Partner account rates", "Multi-guest coordination", "Concierge-level service", "Flexible billing"],
     color: "from-[#1B4D2E] to-[#246038]",
   },
   {
@@ -64,6 +77,7 @@ const services = [
     tiers: ["Corporate", "General"],
     points: ["Up to 8 passengers", "Minibus vehicle", "Group rate pricing", "Enquire for availability"],
     color: "from-[#0F2B1A] to-[#132950]",
+    byRequest: true,
   },
   {
     icon: Route,
@@ -74,16 +88,7 @@ const services = [
     tiers: ["Corporate", "Hotel/B&B", "General"],
     points: ["Garden Route & beyond", "Custom quote within the hour", "Any passenger count", "Return journeys available"],
     color: "from-[#1B3A6B] to-[#224889]",
-  },
-  {
-    icon: Car,
-    title: "Private Chauffeur Service",
-    subtitle: "Full-day or half-day hire",
-    desc: "Require a driver at your disposal for a half-day or full-day? Our private chauffeur service gives you a professional driver and vehicle for as long as you need — perfect for corporate visitors, wine tours, day trips, or multi-stop itineraries.",
-    detail: "Enquire via our contact form with your dates and requirements and we&apos;ll tailor a package to suit your needs.",
-    tiers: ["Corporate", "General"],
-    points: ["Half-day or full-day", "Multiple stops", "Flexible itinerary", "Professional presentation"],
-    color: "from-[#1B4D2E] to-[#132950]",
+    byRequest: true,
   },
 ];
 
@@ -119,7 +124,7 @@ export default function ServicesPage() {
         {/* Services list */}
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="flex flex-col gap-16">
-            {services.map(({ icon: Icon, title, subtitle, desc, detail, tiers, points, color }, idx) => (
+            {services.map(({ icon: Icon, title, subtitle, desc, detail, tiers, points, color, byRequest }, idx) => (
               <section
                 key={title}
                 className="grid lg:grid-cols-[1fr_340px] gap-10 items-start"
@@ -139,13 +144,22 @@ export default function ServicesPage() {
                     {tiers.map((t) => (
                       <span key={t} className={`text-xs font-semibold px-3 py-1 rounded-full ${tierColors[t]}`}>{t}</span>
                     ))}
+                    {byRequest && (
+                      <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[#C9A84C]/15 text-[#7A5F1A]">By request</span>
+                    )}
                   </div>
                   <p className="text-slate-600 leading-relaxed mb-3">{desc}</p>
                   <p className="text-slate-500 text-sm leading-relaxed">{detail}</p>
                   <div className="mt-6">
-                    <Link href="/book" className="inline-flex items-center gap-2 bg-[#1B3A6B] hover:bg-[#224889] text-white font-bold px-6 py-3 rounded-full transition-colors text-sm">
-                      Book This Service <ArrowRight size={15} aria-hidden="true" />
-                    </Link>
+                    {byRequest ? (
+                      <Link href="/contact" className="inline-flex items-center gap-2 bg-[#1B3A6B] hover:bg-[#224889] text-white font-bold px-6 py-3 rounded-full transition-colors text-sm">
+                        Enquire <ArrowRight size={15} aria-hidden="true" />
+                      </Link>
+                    ) : (
+                      <Link href="/book" className="inline-flex items-center gap-2 bg-[#1B3A6B] hover:bg-[#224889] text-white font-bold px-6 py-3 rounded-full transition-colors text-sm">
+                        Book This Service <ArrowRight size={15} aria-hidden="true" />
+                      </Link>
+                    )}
                   </div>
                 </div>
                 <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
