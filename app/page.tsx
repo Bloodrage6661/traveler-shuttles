@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { Metadata } from "next";
 import {
   Plane, Car, Building2, Hotel, MapPin, Users, Route, Star,
@@ -77,11 +78,28 @@ export default function HomePage() {
         {/* ── Hero ── */}
         <section
           className="relative min-h-screen flex flex-col justify-center pt-16 pb-20 px-4 sm:px-6 overflow-hidden"
-          style={{ background: "linear-gradient(160deg, #0F2B1A 0%, #1B4D2E 45%, #1B3A6B 100%)" }}
+          style={{ backgroundColor: "#0F2B1A" }}
           aria-labelledby="hero-heading"
         >
+          {/* Hero photograph — Cape Town */}
+          <Image
+            src="/hero-capetown.jpg"
+            alt="Aerial view of Cape Town with Table Mountain, the stadium and coastline"
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover object-[center_40%]"
+          />
+          {/* Brand-tinted overlay keeps the photo visible while making text legible */}
+          <div className="absolute inset-0" aria-hidden="true" style={{
+            background: "linear-gradient(160deg, rgba(15,43,26,0.82) 0%, rgba(27,77,46,0.42) 46%, rgba(27,58,107,0.80) 100%)"
+          }} />
+          {/* Extra top/bottom darkening for the badge, headline and stats bar */}
+          <div className="absolute inset-0" aria-hidden="true" style={{
+            background: "linear-gradient(180deg, rgba(0,0,0,0.35) 0%, transparent 24%, transparent 58%, rgba(15,43,26,0.60) 100%)"
+          }} />
           {/* Decorative grid */}
-          <div className="absolute inset-0 opacity-5" style={{
+          <div className="absolute inset-0 opacity-[0.04]" style={{
             backgroundImage: "linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px)",
             backgroundSize: "64px 64px"
           }} aria-hidden="true" />
@@ -90,7 +108,7 @@ export default function HomePage() {
             <div className="inline-flex items-center gap-2 bg-white/10 border border-white/15 text-white/80 text-xs font-semibold tracking-[0.15em] uppercase px-4 py-2 rounded-full mb-8">
               <Plane size={12} aria-hidden="true" /> Cape Town International Airport Shuttle
             </div>
-            <h1 id="hero-heading" className="font-bold text-white leading-[1.1] mb-6" style={{ fontSize: "clamp(2.25rem, 6vw, 3.75rem)" }}>
+            <h1 id="hero-heading" className="font-bold text-white leading-[1.1] mb-6" style={{ fontSize: "clamp(2.25rem, 6vw, 3.75rem)", textShadow: "0 2px 24px rgba(0,0,0,0.4)" }}>
               Your Cape Town Transfer,<br />Sorted.
             </h1>
             <p className="text-white/65 text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed mb-10">
