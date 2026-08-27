@@ -3,8 +3,22 @@ import { MessageCircle } from "lucide-react";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.travelershuttlesandtours.co.za"),
   title: "Traveler Shuttles and Tours",
   description: "Book your airport transfer — Cape Town International Airport and beyond.",
+  openGraph: {
+    title: "Traveler Shuttles and Tours",
+    description: "Airport transfers, corporate & private shuttles across Cape Town and the Western Cape.",
+    url: "https://www.travelershuttlesandtours.co.za",
+    siteName: "Traveler Shuttles and Tours",
+    type: "website",
+    locale: "en_ZA",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Traveler Shuttles and Tours",
+    description: "Airport transfers, corporate & private shuttles across Cape Town and the Western Cape.",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
