@@ -116,9 +116,9 @@ function AdminCalendar() {
   return (
     <div className="bg-white rounded-2xl border border-slate-100 p-6">
       <h2 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
-        <CalendarDays size={18} className="text-[#1B3A6B]" /> Availability
+        <CalendarDays size={18} className="text-[#1B3A6B]" /> Block Dates / Time Off
       </h2>
-      <p className="text-slate-500 text-xs mb-4">Click a date to block or unblock it. Blocked dates won&apos;t be available for booking.</p>
+      <p className="text-slate-500 text-xs mb-4">Tap any day to block it (e.g. your days off) — blocked days can&apos;t be booked by clients. Tap again to unblock.</p>
 
       <div className="flex items-center justify-between mb-4">
         <button onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))}
@@ -164,16 +164,20 @@ function AdminCalendar() {
 
 // ─── Booking card ─────────────────────────────────────────────────────────────
 
-function BookingCard({ booking, onUpdate }: { booking: Booking; onUpdate: () => void }) {
-  const [expanded, setExpanded] = useState(false);
+function BookingCard({ booking, onUpdate, defaultExpanded }: { booking: Booking; onUpdate: () => void; defaultExpanded?: boolean }) {
+  const [expanded, setExpanded] = useState(defaultExpanded ?? false);
   const [loading, setLoading]   = useState(false);
+  const [finalPrice, setFinalPrice] = useState<string>(booking.fare_zar != null ? String(booking.fare_zar) : "");
 
   const act = async (action: "confirm" | "cancel") => {
     setLoading(true);
     await fetch(`/api/admin/bookings/${booking.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action }),
+      body: JSON.stringify({
+        action,
+        finalPrice: action === "confirm" && finalPrice ? Number(finalPrice) : undefined,
+      }),
     });
     setLoading(false);
     onUpdate();
@@ -231,15 +235,33 @@ function BookingCard({ booking, onUpdate }: { booking: Booking; onUpdate: () => 
           </div>
 
           {booking.status === "pending" && (
-            <div className="flex gap-2">
-              <button onClick={() => act("confirm")} disabled={loading}
-                className="flex-1 py-2.5 rounded-xl bg-[#1B4D2E] text-white text-sm font-bold flex items-center justify-center gap-1.5 hover:bg-[#246038] transition disabled:opacity-60">
-                {loading ? <Loader2 size={13} className="animate-spin" /> : <><Check size={13} /> Accept</>}
-              </button>
-              <button onClick={() => act("cancel")} disabled={loading}
-                className="flex-1 py-2.5 rounded-xl bg-red-50 text-red-600 text-sm font-bold flex items-center justify-center gap-1.5 hover:bg-red-100 transition disabled:opacity-60">
-                <X size={13} /> Decline
-              </button>
+            <div>
+              <div className="mb-3">
+                <label className="block text-xs font-semibold text-slate-600 mb-1.5">Final price (R)</label>
+                <div className="relative max-w-[220px]">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-semibold">R</span>
+                  <input
+                    type="number" min="0" step="1" inputMode="numeric"
+                    value={finalPrice}
+                    onChange={e => setFinalPrice(e.target.value)}
+                    placeholder="Enter final price"
+                    className="w-full rounded-xl border border-slate-200 pl-7 pr-3 py-2.5 text-sm text-slate-800 outline-none focus:border-[#1B4D2E] focus:ring-2 focus:ring-[#1B4D2E]/10"
+                  />
+                </div>
+                <p className="text-xs text-slate-400 mt-1">
+                  Estimated fare: {booking.fare_zar != null ? `R ${booking.fare_zar.toLocaleString("en-ZA")}` : "—"}. Adjust to the final price the client will be charged.
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => act("confirm")} disabled={loading}
+                  className="flex-1 py-2.5 rounded-xl bg-[#1B4D2E] text-white text-sm font-bold flex items-center justify-center gap-1.5 hover:bg-[#246038] transition disabled:opacity-60">
+                  {loading ? <Loader2 size={13} className="animate-spin" /> : <><Check size={13} /> Confirm with this price</>}
+                </button>
+                <button onClick={() => act("cancel")} disabled={loading}
+                  className="py-2.5 px-4 rounded-xl bg-red-50 text-red-600 text-sm font-bold flex items-center justify-center gap-1.5 hover:bg-red-100 transition disabled:opacity-60">
+                  <X size={13} /> Decline
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -254,6 +276,7 @@ function Dashboard() {
   const [bookings, setBookings]   = useState<Booking[]>([]);
   const [loading, setLoading]     = useState(true);
   const [filter, setFilter]       = useState<"all" | BookingStatus>("all");
+  const [highlight, setHighlight] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -264,6 +287,12 @@ function Dashboard() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  // Deep link from the driver email: /admin?booking=<id> opens that booking expanded.
+  useEffect(() => {
+    const b = new URLSearchParams(window.location.search).get("booking");
+    if (b) setHighlight(b);
+  }, []);
 
   const logout = async () => {
     await fetch("/api/admin/login", { method: "DELETE" });
@@ -314,7 +343,7 @@ function Dashboard() {
             <div className="text-center py-16 text-slate-400 text-sm">No {filter !== "all" ? filter : ""} bookings yet.</div>
           ) : (
             <div className="space-y-3">
-              {filtered.map(b => <BookingCard key={b.id} booking={b} onUpdate={load} />)}
+              {filtered.map(b => <BookingCard key={b.id} booking={b} onUpdate={load} defaultExpanded={highlight != null && (b.id === highlight || b.id.startsWith(highlight.toLowerCase()))} />)}
             </div>
           )}
         </div>

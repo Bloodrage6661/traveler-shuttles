@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
 import {
-  Plane, Car, Building2, Hotel, MapPin, Users, Route, Star,
+  Plane, Car, Building2, Hotel, MapPin, Star,
   CheckCircle2, ArrowRight, Clock, Shield, ChevronRight,
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
@@ -24,13 +24,11 @@ const services = [
   { icon: Building2, title: "Corporate Transport", desc: "Executive transfers on account. Reliable, punctual, and tailored to your business schedule." },
   { icon: Hotel, title: "Hotel & B&B Transfers", desc: "Partner rates for hospitality businesses arranging transfers on behalf of their guests." },
   { icon: MapPin, title: "Point-to-Point", desc: "Door-to-door transfers between any two locations across the Western Cape." },
-  { icon: Users, title: "Group Transport", desc: "Up to 8 passengers. Minibus available on request for larger groups and events." },
-  { icon: Route, title: "Long Distance", desc: "Garden Route, Hermanus, Langebaan and beyond. Custom quotes for extended journeys." },
 ];
 
 const steps = [
   { n: "01", title: "Fill in your details", desc: "Your name, contact info, pickup and drop-off addresses." },
-  { n: "02", title: "See your fare instantly", desc: "We measure the distance from your addresses — pricing is shown instantly, no surprises." },
+  { n: "02", title: "Get an instant estimate", desc: "We measure the distance and show an estimated fare. We confirm the final price when we accept your booking." },
   { n: "03", title: "Pick a date", desc: "Choose from available dates. The driver confirms within the hour." },
 ];
 
@@ -54,8 +52,8 @@ const testimonials = [
 
 const areas = [
   "Cape Town CBD", "V&A Waterfront", "Stellenbosch", "Franschhoek", "Paarl",
-  "Somerset West", "Hermanus", "George", "Langebaan", "Bloubergstrand",
-  "Constantia", "Garden Route", "All CTIA transfers",
+  "Somerset West", "George", "Langebaan", "Bloubergstrand",
+  "Constantia", "All CTIA transfers",
 ];
 
 const stats = [
@@ -291,7 +289,7 @@ export default function HomePage() {
                 </div>
                 <p className="text-slate-500 text-sm leading-relaxed mb-6">
                   We operate across the entire Western Cape region. Whether you need a transfer from a wine estate in Franschhoek,
-                  a business pickup in the CBD, or a long-distance run to the Garden Route — we&apos;ve got you covered.
+                  a business pickup in the CBD, or a point-to-point run across the Cape — we&apos;ve got you covered.
                   Contact us for destinations beyond 75km.
                 </p>
                 <Link href="/book" className="inline-flex items-center gap-2 bg-[#1B4D2E] hover:bg-[#246038] text-white font-bold px-6 py-3 rounded-full transition-colors text-sm">

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import type { ElementType } from "react";
-import { Plane, Building2, Hotel, MapPin, Users, Route, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Plane, Building2, Hotel, MapPin, ArrowRight, CheckCircle2 } from "lucide-react";
 
 type Service = {
   icon: ElementType;
@@ -67,28 +67,6 @@ const services: Service[] = [
     tiers: ["Corporate", "Hotel/B&B", "General"],
     points: ["Any Western Cape destination", "Transparent distance-based pricing", "1–3 passengers", "Return trips available"],
     color: "from-[#133820] to-[#1B3A6B]",
-  },
-  {
-    icon: Users,
-    title: "Group Transport",
-    subtitle: "Up to 8 passengers",
-    desc: "Travelling with a larger group? Our minibus service accommodates up to 8 passengers, ideal for corporate teams, tour groups, wedding parties, and families travelling together. One vehicle, one invoice, everyone arrives together.",
-    detail: "Please enquire in advance for group bookings to confirm minibus availability on your preferred date. Group rates apply.",
-    tiers: ["Corporate", "General"],
-    points: ["Up to 8 passengers", "Minibus vehicle", "Group rate pricing", "Enquire for availability"],
-    color: "from-[#0F2B1A] to-[#132950]",
-    byRequest: true,
-  },
-  {
-    icon: Route,
-    title: "Long Distance Travel",
-    subtitle: "Beyond 75 km — custom quotes",
-    desc: "For destinations beyond our standard 75km pricing bands — Garden Route, Hermanus, Langebaan, George, and further — we provide custom quotes based on your specific journey. No hidden fees, just a fair price for the distance covered.",
-    detail: "Submit your booking request with your pickup and destination details and we&apos;ll respond with a personalised quote within the hour.",
-    tiers: ["Corporate", "Hotel/B&B", "General"],
-    points: ["Garden Route & beyond", "Custom quote within the hour", "Any passenger count", "Return journeys available"],
-    color: "from-[#1B3A6B] to-[#224889]",
-    byRequest: true,
   },
 ];
 

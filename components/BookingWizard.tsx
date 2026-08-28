@@ -416,11 +416,14 @@ export default function BookingWizard() {
           <div>
             {/* Fare summary */}
             <div className="bg-gradient-to-br from-[#1B4D2E] to-[#1B3A6B] rounded-2xl p-5 text-white mb-6">
-              <p className="text-white/60 text-xs uppercase tracking-widest mb-1">{BAND_LABELS[band!]} · {passengers} pax · {TIER_LABELS[customerTier]}</p>
+              <p className="text-white/60 text-xs uppercase tracking-widest mb-1">Estimated fare · {BAND_LABELS[band!]} · {passengers} pax · {TIER_LABELS[customerTier]}</p>
               <p className="text-4xl font-bold mb-1">{finalFare ? formatRand(finalFare) : "—"}</p>
               <p className="text-white/60 text-sm">
-                Per trip · {TRIP_TYPE_LABELS[tripType]}
+                {TRIP_TYPE_LABELS[tripType]}
                 {distanceKm != null && <> · {distanceKm} km</>}
+              </p>
+              <p className="mt-3 text-white/75 text-xs bg-white/10 border border-white/15 rounded-lg px-3 py-2 leading-relaxed">
+                This is an estimate. We&apos;ll confirm the final price when we accept your booking — you&apos;re not charged now.
               </p>
               {weekendApplies && fare != null && finalFare != null && (
                 <p className="mt-3 inline-flex items-center gap-1.5 bg-[#C9A84C]/25 text-[#F3E4BE] text-xs font-semibold px-3 py-1.5 rounded-full">

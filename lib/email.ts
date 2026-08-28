@@ -85,7 +85,7 @@ export async function sendDriverNotification(booking: {
   const date = booking.preferredDate ?? "Not specified";
   const pickupTimeLabel = formatPickupTime(booking.preferredTimeWindow);
 
-  const acceptUrl  = `${BASE_URL}/api/confirm/${booking.confirmToken}?action=accept`;
+  const adminUrl   = `${BASE_URL}/admin?booking=${booking.id}`;
   const declineUrl = `${BASE_URL}/api/confirm/${booking.confirmToken}?action=decline`;
 
   const body = `
@@ -101,15 +101,15 @@ export async function sendDriverNotification(booking: {
       ${row("Passengers", String(booking.passengers))}
       ${row("Trip type", booking.tripType.replace(/_/g, " "))}
       ${row("Customer type", booking.customerTier)}
-      ${row("Fare", fare)}
+      ${row("Estimated fare", fare)}
       ${row("Date", date)}
       ${row("Pickup time", pickupTimeLabel)}
     </table>
     <table cellpadding="0" cellspacing="0">
       <tr>
         <td style="padding-right:12px;">
-          <a href="${acceptUrl}" style="display:inline-block;background:${BRAND.green};color:#fff;font-weight:700;padding:14px 28px;border-radius:8px;text-decoration:none;font-size:15px;">
-            ✓ Accept Booking
+          <a href="${adminUrl}" style="display:inline-block;background:${BRAND.green};color:#fff;font-weight:700;padding:14px 28px;border-radius:8px;text-decoration:none;font-size:15px;">
+            → Set Final Price &amp; Confirm
           </a>
         </td>
         <td>
@@ -119,7 +119,7 @@ export async function sendDriverNotification(booking: {
         </td>
       </tr>
     </table>
-    <p style="margin:20px 0 0;font-size:12px;color:#999;">These links are single-use. Clicking one will update the booking and notify the client automatically.</p>
+    <p style="margin:20px 0 0;font-size:12px;color:#999;">Open the admin panel to enter the final price and confirm — the client is only charged and notified once you confirm. The estimated fare above is a guide. Decline is single-use.</p>
   `;
 
   await getResend().emails.send({
@@ -144,7 +144,7 @@ export async function sendClientPending(booking: {
     <p style="font-size:15px;color:#333;line-height:1.6;">
       Hi ${booking.clientName.split(" ")[0]},<br><br>
       Thank you for your booking request. We've received your details and the driver will confirm your transfer shortly.
-      You'll receive a confirmation email as soon as it's accepted.
+      Any fare shown was an estimate — we'll confirm the final price in your confirmation email as soon as your booking is accepted.
     </p>
     ${booking.preferredDate ? `<p style="font-size:14px;color:#666;">Requested date: <strong>${booking.preferredDate}</strong></p>` : ""}
     <p style="font-size:14px;color:#666;margin-top:24px;">
