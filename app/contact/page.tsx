@@ -34,9 +34,15 @@ export default function ContactPage() {
     if (!name || !email || !message) { setError("Please fill in all required fields."); return; }
     setLoading(true);
     try {
-      await new Promise((r) => setTimeout(r, 800));
-      window.location.href = `mailto:info@travelershuttles.co.za?subject=Enquiry from ${encodeURIComponent(name)}&body=${encodeURIComponent(`Name: ${name}\nEmail: ${email}\nPhone: ${phone}\n\n${message}`)}`;
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, phone, message }),
+      });
+      if (!res.ok) throw new Error("send failed");
       setSent(true);
+    } catch {
+      setError("Sorry, something went wrong sending your message. Please try again or WhatsApp us.");
     } finally {
       setLoading(false);
     }
@@ -76,7 +82,7 @@ export default function ContactPage() {
                     <CheckCircle2 size={26} aria-hidden="true" />
                   </div>
                   <p className="font-semibold text-slate-900 text-lg mb-2">Message sent!</p>
-                  <p className="text-slate-500 text-sm">Your email client should have opened. We&apos;ll get back to you shortly.</p>
+                  <p className="text-slate-500 text-sm">Thanks — we&apos;ve received your enquiry and will get back to you shortly.</p>
                 </div>
               ) : (
                 <form onSubmit={submit} className="space-y-4" noValidate>

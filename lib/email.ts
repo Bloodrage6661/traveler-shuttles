@@ -281,3 +281,34 @@ export async function sendDriverCalendarInvite(booking: InviteBooking) {
     ],
   });
 }
+
+// Contact-form enquiry — delivered to the business inbox(es). Reply-To is set to
+// the enquirer so a reply goes straight back to them.
+export async function sendEnquiry(enquiry: {
+  name: string;
+  email: string;
+  phone?: string;
+  message: string;
+}) {
+  if (DRIVER_EMAILS.length === 0) return;
+
+  const body = `
+    <h2 style="margin:0 0 4px;font-size:20px;color:${BRAND.dark};">New Website Enquiry</h2>
+    <p style="margin:0 0 20px;color:#666;font-size:14px;">Submitted via the contact form.</p>
+    <table cellpadding="0" cellspacing="0" style="width:100%;margin-bottom:20px;">
+      ${row("Name", enquiry.name)}
+      ${row("Email", enquiry.email)}
+      ${enquiry.phone ? row("Phone", enquiry.phone) : ""}
+    </table>
+    <p style="font-size:13px;color:#999;margin:0 0 6px;">Message</p>
+    <p style="font-size:15px;color:#333;line-height:1.6;white-space:pre-wrap;background:#f9f9f9;border-radius:8px;padding:14px;">${enquiry.message.replace(/</g, "&lt;")}</p>
+  `;
+
+  await getResend().emails.send({
+    from: "Traveler Shuttles <noreply@travelershuttlesandtours.co.za>",
+    to: DRIVER_EMAILS,
+    replyTo: enquiry.email,
+    subject: `Website enquiry — ${enquiry.name}`,
+    html: layout(body),
+  });
+}
