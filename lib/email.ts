@@ -205,6 +205,51 @@ export async function sendClientConfirmed(booking: {
   });
 }
 
+// Sent when Greg changes the price on an already-confirmed booking, so the
+// client always sees the up-to-date final fare.
+export async function sendClientPriceUpdated(booking: {
+  id: string;
+  clientName: string;
+  clientEmail: string;
+  pickupAddress: string;
+  dropoffAddress: string;
+  passengers: number;
+  fareZar: number | null;
+  preferredDate: string | null;
+  preferredTimeWindow: string | null;
+}) {
+  const ref = booking.id.slice(0, 8).toUpperCase();
+  const fare = booking.fareZar ? `R ${booking.fareZar.toLocaleString("en-ZA")}` : "To be confirmed";
+
+  const body = `
+    <h2 style="margin:0 0 4px;font-size:20px;color:${BRAND.dark};">Updated Fare for Your Transfer</h2>
+    <p style="margin:0 0 24px;color:#666;font-size:14px;">Reference: <strong>#${ref}</strong></p>
+    <p style="font-size:15px;color:#333;line-height:1.6;">
+      Hi ${booking.clientName.split(" ")[0]},<br><br>
+      We've updated the fare for your confirmed transfer. Your booking remains confirmed — here are the latest details:
+    </p>
+    <table cellpadding="0" cellspacing="0" style="width:100%;margin:20px 0;background:#f9f9f9;border-radius:8px;padding:16px;">
+      ${row("Pickup", booking.pickupAddress)}
+      ${row("Drop-off", booking.dropoffAddress)}
+      ${row("Passengers", String(booking.passengers))}
+      ${row("Date", booking.preferredDate ?? "TBC")}
+      ${row("Pickup time", formatPickupTime(booking.preferredTimeWindow))}
+      ${row("Updated fare", `<strong style="color:${BRAND.green};">${fare}</strong>`)}
+    </table>
+    <p style="font-size:14px;color:#666;">
+      If you have any questions about this change, just reply to this email.
+      Please have your booking reference <strong>#${ref}</strong> ready.
+    </p>
+  `;
+
+  await getResend().emails.send({
+    from: "Traveler Shuttles <noreply@travelershuttlesandtours.co.za>",
+    to: booking.clientEmail,
+    subject: `Updated fare for booking #${ref} — Traveler Shuttles`,
+    html: layout(body),
+  });
+}
+
 export async function sendClientDeclined(booking: {
   id: string;
   clientName: string;

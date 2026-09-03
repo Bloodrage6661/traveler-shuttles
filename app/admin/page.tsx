@@ -281,18 +281,21 @@ function BookingCard({ booking, onUpdate, defaultExpanded }: { booking: Booking;
   const [expanded, setExpanded] = useState(defaultExpanded ?? false);
   const [loading, setLoading]   = useState(false);
   const [finalPrice, setFinalPrice] = useState<string>(booking.fare_zar != null ? String(booking.fare_zar) : "");
+  const [priceSaved, setPriceSaved] = useState(false);
 
-  const act = async (action: "confirm" | "cancel") => {
+  const act = async (action: "confirm" | "cancel" | "update_price") => {
     setLoading(true);
+    setPriceSaved(false);
     await fetch(`/api/admin/bookings/${booking.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         action,
-        finalPrice: action === "confirm" && finalPrice ? Number(finalPrice) : undefined,
+        finalPrice: (action === "confirm" || action === "update_price") && finalPrice ? Number(finalPrice) : undefined,
       }),
     });
     setLoading(false);
+    if (action === "update_price") { setPriceSaved(true); setTimeout(() => setPriceSaved(false), 4000); }
     onUpdate();
   };
 
@@ -384,6 +387,31 @@ function BookingCard({ booking, onUpdate, defaultExpanded }: { booking: Booking;
                   <X size={13} /> Decline
                 </button>
               </div>
+            </div>
+          )}
+
+          {booking.status === "confirmed" && (
+            <div className="border-t border-slate-100 pt-4">
+              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Change price (R)</label>
+              <div className="flex gap-2 items-start">
+                <div className="relative max-w-[180px] flex-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-semibold">R</span>
+                  <input
+                    type="number" min="0" step="1" inputMode="numeric"
+                    value={finalPrice}
+                    onChange={e => setFinalPrice(e.target.value)}
+                    placeholder="New price"
+                    className="w-full rounded-xl border border-slate-200 pl-7 pr-3 py-2.5 text-sm text-slate-800 outline-none focus:border-[#1B3A6B] focus:ring-2 focus:ring-[#1B3A6B]/10"
+                  />
+                </div>
+                <button onClick={() => act("update_price")} disabled={loading || !finalPrice}
+                  className="py-2.5 px-4 rounded-xl bg-[#1B3A6B] text-white text-sm font-bold flex items-center justify-center gap-1.5 hover:bg-[#224889] transition disabled:opacity-60">
+                  {loading ? <Loader2 size={13} className="animate-spin" /> : <><Mail size={13} /> Update price &amp; notify client</>}
+                </button>
+              </div>
+              {priceSaved && (
+                <p className="text-green-600 text-xs font-medium mt-2 flex items-center gap-1"><Check size={12} /> Price updated — the client has been emailed the new fare.</p>
+              )}
             </div>
           )}
         </div>
