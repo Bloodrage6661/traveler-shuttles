@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { LogOut, Check, X, CalendarDays, Clock, Loader2, Users, MapPin, Phone, Mail, ChevronDown, ChevronUp } from "lucide-react";
+import { LogOut, Check, X, CalendarDays, Clock, Loader2, Users, MapPin, Phone, Mail, ChevronDown, ChevronUp, Plane, RefreshCw } from "lucide-react";
 import { formatPickupTime } from "@/lib/time";
 
 type BookingStatus = "pending" | "confirmed" | "cancelled";
@@ -22,7 +22,120 @@ interface Booking {
   fare_zar: number | null;
   preferred_date: string | null;
   preferred_time_window: string | null;
+  flight_number: string | null;
   status: BookingStatus;
+}
+
+// ─── Live flight status ─────────────────────────────────────────────────────────
+
+interface FlightStatus {
+  number: string;
+  label: string;
+  tone: "ok" | "live" | "warn" | "bad" | "muted";
+  departureAirport: string | null;
+  arrivalAirport: string | null;
+  scheduledArrivalLocal: string | null;
+  estimatedArrivalLocal: string | null;
+  arrivalDelayMinutes: number | null;
+  fetchedAt: string;
+}
+
+const FLIGHT_TONE: Record<FlightStatus["tone"], string> = {
+  ok:    "bg-green-100 text-green-700",
+  live:  "bg-blue-100 text-blue-700",
+  warn:  "bg-amber-100 text-amber-700",
+  bad:   "bg-red-100 text-red-600",
+  muted: "bg-slate-100 text-slate-500",
+};
+
+function fmtTime(s: string | null): string {
+  if (!s) return "—";
+  const d = new Date(s.includes("T") ? s : s.replace(" ", "T"));
+  if (isNaN(d.getTime())) return s;
+  return d.toLocaleString("en-ZA", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: false });
+}
+
+function FlightTracker({ flightNumber, date }: { flightNumber: string; date: string | null }) {
+  const [status, setStatus] = useState<FlightStatus | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [notFound, setNotFound] = useState(false);
+
+  const load = useCallback(async () => {
+    if (!date) return;
+    setLoading(true);
+    setNotFound(false);
+    try {
+      const res = await fetch(`/api/flight-status?flight=${encodeURIComponent(flightNumber)}&date=${date}`);
+      const data = await res.json();
+      if (data.status) setStatus(data.status);
+      else { setStatus(null); setNotFound(true); }
+    } catch {
+      setNotFound(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [flightNumber, date]);
+
+  // Load on mount and auto-refresh every 90s (live).
+  useEffect(() => {
+    load();
+    const t = setInterval(load, 90_000);
+    return () => clearInterval(t);
+  }, [load]);
+
+  const delay = status?.arrivalDelayMinutes ?? null;
+
+  return (
+    <div className="mt-1 rounded-xl border border-slate-200 bg-slate-50 p-4">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <Plane size={14} className="text-[#1B3A6B]" />
+          <span className="font-semibold text-slate-700 text-sm">Flight {flightNumber}</span>
+          {status && (
+            <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${FLIGHT_TONE[status.tone]}`}>
+              {status.label}
+            </span>
+          )}
+        </div>
+        <button onClick={load} disabled={loading} title="Refresh"
+          className="text-slate-400 hover:text-[#1B3A6B] transition p-1 disabled:opacity-50">
+          <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
+        </button>
+      </div>
+
+      {loading && !status && <p className="text-xs text-slate-400">Checking live status…</p>}
+      {notFound && !loading && (
+        <p className="text-xs text-slate-400">No live data yet for this flight/date. It usually appears within ~24h of departure.</p>
+      )}
+
+      {status && (
+        <div className="space-y-1.5 text-xs text-slate-600">
+          {(status.departureAirport || status.arrivalAirport) && (
+            <p className="flex items-center gap-1.5">
+              <span className="truncate">{status.departureAirport ?? "—"}</span>
+              <span className="text-slate-300">→</span>
+              <span className="truncate">{status.arrivalAirport ?? "—"}</span>
+            </p>
+          )}
+          <div className="flex flex-wrap gap-x-4 gap-y-1">
+            <span>Scheduled arrival: <strong className="text-slate-700">{fmtTime(status.scheduledArrivalLocal)}</strong></span>
+            {status.estimatedArrivalLocal && (
+              <span>
+                Estimated: <strong className={delay && delay > 5 ? "text-amber-600" : "text-green-700"}>{fmtTime(status.estimatedArrivalLocal)}</strong>
+              </span>
+            )}
+          </div>
+          {delay != null && delay > 5 && (
+            <p className="text-amber-600 font-medium">⚠ Running ~{delay} min late</p>
+          )}
+          {delay != null && delay <= 5 && delay >= -5 && (
+            <p className="text-green-700 font-medium">On time</p>
+          )}
+          <p className="text-slate-300 text-[10px] pt-1">Updated {new Date(status.fetchedAt).toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" })} · auto-refreshes</p>
+        </div>
+      )}
+    </div>
+  );
 }
 
 const STATUS_COLORS: Record<BookingStatus, string> = {
@@ -205,6 +318,9 @@ function BookingCard({ booking, onUpdate, defaultExpanded }: { booking: Booking;
               <span className="flex items-center gap-1"><Clock size={11} />{formatPickupTime(booking.preferred_time_window)}</span>
             )}
             <span className="flex items-center gap-1"><Users size={11} />{booking.passengers} pax</span>
+            {booking.flight_number && (
+              <span className="flex items-center gap-1 bg-[#1B3A6B]/10 text-[#1B3A6B] px-1.5 py-0.5 rounded text-xs font-semibold"><Plane size={10} />{booking.flight_number}</span>
+            )}
             <span className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded text-xs font-medium">{booking.customer_tier}</span>
             <span className="font-semibold text-slate-700">{fare}</span>
           </div>
@@ -233,6 +349,12 @@ function BookingCard({ booking, onUpdate, defaultExpanded }: { booking: Booking;
             </div>
             <div className="text-slate-500 text-xs">{booking.distance_km} km · {booking.trip_type.replace(/_/g, " ")} · {booking.pricing_band}</div>
           </div>
+
+          {booking.flight_number && (
+            <div className="mb-4">
+              <FlightTracker flightNumber={booking.flight_number} date={booking.preferred_date} />
+            </div>
+          )}
 
           {booking.status === "pending" && (
             <div>

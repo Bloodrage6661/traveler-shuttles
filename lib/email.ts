@@ -77,6 +77,7 @@ export async function sendDriverNotification(booking: {
   fareZar: number | null;
   preferredDate: string | null;
   preferredTimeWindow: string | null;
+  flightNumber?: string | null;
 }) {
   if (DRIVER_EMAILS.length === 0) return;
 
@@ -100,6 +101,7 @@ export async function sendDriverNotification(booking: {
       ${row("Distance", `${booking.distanceKm} km`)}
       ${row("Passengers", String(booking.passengers))}
       ${row("Trip type", booking.tripType.replace(/_/g, " "))}
+      ${booking.flightNumber ? row("Flight number", booking.flightNumber) : ""}
       ${row("Customer type", booking.customerTier)}
       ${row("Estimated fare", fare)}
       ${row("Date", date)}

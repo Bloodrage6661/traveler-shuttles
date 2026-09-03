@@ -155,7 +155,10 @@ export default function BookingWizard() {
   const [dropoff,      setDropoff]      = useState("");
   const [passengers,   setPassengers]   = useState(1);
   const [tripType,     setTripType]     = useState<TripType>("to_airport");
+  const [flightNumber, setFlightNumber] = useState("");
   const [customerTier, setCustomerTier] = useState<CustomerTier>("General");
+
+  const isAirportTrip = tripType === "to_airport" || tripType === "from_airport";
 
   // Coordinates captured when an autocomplete suggestion is chosen
   const [pickupCoords,  setPickupCoords]  = useState<SelectedPlace | null>(null);
@@ -234,6 +237,7 @@ export default function BookingWizard() {
           passengers,
           tripType,
           customerTier,
+          flightNumber: isAirportTrip ? flightNumber : null,
           userId: user?.id ?? null,
           pricingBand: band,
           fareZar: finalFare,
@@ -268,6 +272,7 @@ export default function BookingWizard() {
           distanceKm: distanceKm ?? 0,
           passengers,
           tripType,
+          flightNumber: isAirportTrip ? flightNumber : null,
           userId: user?.id ?? null,
           customerTier,
           pricingBand: "custom",
@@ -365,6 +370,24 @@ export default function BookingWizard() {
                 ))}
               </div>
             </div>
+            {isAirportTrip && (
+              <div>
+                <Label>Flight number <span className="text-slate-400 font-normal">(optional — enables live flight tracking)</span></Label>
+                <Field
+                  icon={Plane}
+                  type="text"
+                  placeholder="e.g. BA349 or FA123"
+                  value={flightNumber}
+                  onChange={e => setFlightNumber(e.target.value.toUpperCase())}
+                  autoCapitalize="characters"
+                />
+                <p className="text-xs text-slate-400 mt-1.5">
+                  {tripType === "from_airport"
+                    ? "We'll track your arrival so your driver is there when you land — even if the flight is delayed."
+                    : "Helps us track your flight and time your pickup precisely."}
+                </p>
+              </div>
+            )}
             <div>
               <Label>Customer type</Label>
               <div className="space-y-2">
