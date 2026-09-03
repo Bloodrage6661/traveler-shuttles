@@ -28,6 +28,27 @@ function utcStamp(d: Date) {
   return `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`;
 }
 
+// Local (SAST) wall-clock stamp, no "Z": add the +2h offset to the UTC instant
+// and read the fields. Used with TZID=Africa/Johannesburg.
+function localStamp(d: Date) {
+  const l = new Date(d.getTime() + SAST_OFFSET_HOURS * 60 * 60 * 1000);
+  return `${l.getUTCFullYear()}${pad(l.getUTCMonth() + 1)}${pad(l.getUTCDate())}T${pad(l.getUTCHours())}${pad(l.getUTCMinutes())}${pad(l.getUTCSeconds())}`;
+}
+
+// Fixed South African timezone (UTC+2, no daylight saving) so every client
+// resolves the booking time unambiguously.
+const VTIMEZONE = [
+  "BEGIN:VTIMEZONE",
+  "TZID:Africa/Johannesburg",
+  "BEGIN:STANDARD",
+  "DTSTART:19700101T000000",
+  "TZOFFSETFROM:+0200",
+  "TZOFFSETTO:+0200",
+  "TZNAME:SAST",
+  "END:STANDARD",
+  "END:VTIMEZONE",
+];
+
 // Returns UTC start/end for a timed booking, or null when there's no precise time.
 function times(b: InviteBooking): { start: Date; end: Date } | null {
   const dm = b.preferredDate ? /^(\d{4})-(\d{2})-(\d{2})$/.exec(b.preferredDate) : null;
@@ -80,13 +101,18 @@ export function buildBookingIcs(b: InviteBooking, attendees: string[]): string |
     "PRODID:-//Traveler Shuttles and Tours//Booking//EN",
     "CALSCALE:GREGORIAN",
     "METHOD:REQUEST",
+    ...VTIMEZONE,
     "BEGIN:VEVENT",
     `UID:booking-${b.id}@travelershuttlesandtours.co.za`,
     `DTSTAMP:${now}`,
   ];
 
   if (t) {
-    lines.push(`DTSTART:${utcStamp(t.start)}`, `DTEND:${utcStamp(t.end)}`);
+    // Anchor to South African time explicitly (not bare UTC) for reliable display everywhere.
+    lines.push(
+      `DTSTART;TZID=Africa/Johannesburg:${localStamp(t.start)}`,
+      `DTEND;TZID=Africa/Johannesburg:${localStamp(t.end)}`
+    );
   } else {
     // No precise time -> all-day event on the requested date.
     const d = b.preferredDate.replace(/-/g, "");
@@ -125,6 +151,7 @@ export function googleCalendarLink(b: InviteBooking): string | null {
     action: "TEMPLATE",
     text: summary(b),
     dates,
+    ctz: "Africa/Johannesburg",
     details: descriptionLines(b).join("\n"),
     location: `${b.pickupAddress} → ${b.dropoffAddress}`,
   });
