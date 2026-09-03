@@ -24,7 +24,7 @@ export async function PATCH(
     // Greg sets the final price manually; fall back to the estimate if none provided.
     const fare = typeof finalPrice === "number" && finalPrice > 0 ? Math.round(finalPrice) : booking.fare_zar;
     await db.from("bookings").update({ status: "confirmed", token_used: true, fare_zar: fare }).eq("id", id);
-    await Promise.allSettled([
+    const results = await Promise.allSettled([
       sendClientConfirmed({
         id: booking.id,
         clientName: booking.client_name,
@@ -50,6 +50,16 @@ export async function PATCH(
         preferredTimeWindow: booking.preferred_time_window,
       }),
     ]);
+    results.forEach((r, i) => {
+      if (r.status === "rejected") console.error(`[confirm] email ${i} failed:`, r.reason);
+    });
+    if (req.nextUrl.searchParams.get("debug") === "1") {
+      return NextResponse.json({
+        ok: true,
+        clientEmail: booking.client_email,
+        emails: results.map(r => r.status === "rejected" ? { ok: false, error: String(r.reason?.message ?? r.reason) } : { ok: true }),
+      });
+    }
   } else if (action === "update_price") {
     // Change the fare on an already-confirmed booking and re-notify the client.
     const fare = typeof finalPrice === "number" && finalPrice > 0 ? Math.round(finalPrice) : booking.fare_zar;
