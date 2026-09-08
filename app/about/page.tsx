@@ -5,8 +5,9 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "About Us | Traveler Shuttles and Tours — Cape Town",
+  title: "About Us — Cape Town Shuttle & Transfer Service",
   description: "Learn about Traveler Shuttles and Tours — a professional Cape Town shuttle and transfer service committed to reliability, transparency, and professionalism.",
+  alternates: { canonical: "/about" },
   openGraph: {
     title: "About Us | Traveler Shuttles and Tours",
     description: "Professional Cape Town shuttle service committed to reliability, transparency, and professionalism.",

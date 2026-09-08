@@ -10,11 +10,12 @@ import Footer from "@/components/Footer";
 import PricingGate from "@/components/PricingGate";
 
 export const metadata: Metadata = {
-  title: "Traveler Shuttles and Tours | Cape Town Airport Transfers & Shuttle Service",
-  description: "Professional airport shuttles, corporate transfers, and private chauffeur service across the Western Cape. Book online in minutes.",
+  title: { absolute: "Traveler Shuttles and Tours | Cape Town Airport Transfers & Shuttle Service" },
+  description: "Professional Cape Town airport shuttles, corporate transfers, and private transfers across the Western Cape. Transparent pricing, real-time flight tracking, driver-confirmed. Book online in minutes.",
+  alternates: { canonical: "/" },
   openGraph: {
     title: "Traveler Shuttles and Tours | Cape Town Airport Transfers",
-    description: "Professional airport shuttles, corporate transfers, and private chauffeur service across the Western Cape.",
+    description: "Professional airport shuttles, corporate transfers, and private transfers across the Western Cape.",
     type: "website",
   },
 };

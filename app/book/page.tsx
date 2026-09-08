@@ -5,8 +5,9 @@ import Footer from "@/components/Footer";
 import BookingWizard from "@/components/BookingWizard";
 
 export const metadata: Metadata = {
-  title: "Book a Transfer | Traveler Shuttles and Tours",
-  description: "Book your Cape Town airport transfer or shuttle online. Transparent pricing, instant fare calculation, confirmed by the driver.",
+  title: "Book a Transfer — Cape Town Airport Shuttle",
+  description: "Book your Cape Town airport transfer or shuttle online. Transparent pricing, instant fare calculation, real-time flight tracking, confirmed by the driver.",
+  alternates: { canonical: "/book" },
   openGraph: {
     title: "Book a Transfer | Traveler Shuttles and Tours",
     description: "Book your Cape Town airport transfer or shuttle online.",

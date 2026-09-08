@@ -18,8 +18,9 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "Shuttle Services | Airport Transfers, Corporate & Private | Traveler Shuttles",
-  description: "Full range of shuttle and transfer services across Cape Town and the Western Cape — airport, corporate, hotel, point-to-point, group, and long distance.",
+  title: "Shuttle Services — Airport, Corporate & Private Transfers",
+  description: "Full range of shuttle and transfer services across Cape Town and the Western Cape — airport transfers, corporate transport, hotel & B&B transfers, and point-to-point.",
+  alternates: { canonical: "/services" },
   openGraph: {
     title: "Shuttle Services | Traveler Shuttles and Tours",
     description: "Airport transfers, corporate transport, hotel shuttles and more across the Western Cape.",
