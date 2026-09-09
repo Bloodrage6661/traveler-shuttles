@@ -268,6 +268,18 @@ export default function HomePage() {
                 </div>
               ))}
             </div>
+            <div className="text-center mt-12">
+              <a
+                href="https://share.google/t3fEMzN8S2qNOZFUx"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-white border border-slate-200 hover:border-[#C9A84C] shadow-sm hover:shadow-md text-slate-700 font-semibold text-sm px-6 py-3.5 rounded-full transition-all"
+              >
+                <Star size={16} fill="#C9A84C" className="text-[#C9A84C]" aria-hidden="true" />
+                Read all our reviews on Google
+                <ArrowRight size={16} aria-hidden="true" />
+              </a>
+            </div>
           </div>
         </section>
 
