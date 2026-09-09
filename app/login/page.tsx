@@ -63,7 +63,7 @@ export default function LoginPage() {
       <div className="flex items-center justify-center px-4 py-16 bg-slate-50">
         <div className="w-full max-w-md">
           <Link href="/" className="block mb-8 lg:hidden" aria-label="Traveler Shuttles and Tours — home">
-            <Image src="/logo.png" alt="Traveler Shuttles and Tours" width={280} height={280} className="h-20 w-auto" />
+            <Image src="/logo-dark.png" alt="Traveler Shuttles and Tours" width={280} height={280} className="h-20 w-auto" />
           </Link>
 
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8">
