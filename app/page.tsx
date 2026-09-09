@@ -46,9 +46,9 @@ const fleet = [
 ];
 
 const testimonials = [
-  { quote: "Punctual, professional and great value. We use them for all our hotel airport transfers.", name: "Cape Grace Hotel", location: "Cape Town", accent: "#1B4D2E" },
-  { quote: "Our corporate account is seamlessly managed. Drivers are always on time, every time.", name: "ABC Logistics", location: "Bellville", accent: "#1B3A6B" },
-  { quote: "Booked for a family airport run at 4am — driver was early, helped with luggage. Highly recommend.", name: "Sarah M.", location: "Stellenbosch", accent: "#1B4D2E" },
+  { quote: "I must give 5★ to this company. Always on time. The drivers are very professional and reliable. We use them at least once a month and always feel safe even at night. The door-to-door pickup is such a bonus — they also do late evenings and very early morning pickups to the airport and back.", name: "Crystal De La Pierre", location: "Google review", accent: "#1B4D2E" },
+  { quote: "Best and safest shuttle to use. Best pricing in the market.", name: "Nic Swanepoel", location: "Local Guide · Google review", accent: "#1B3A6B" },
+  { quote: "Thanks Greg for your great service — a safe transfer to Cape Town Airport, smooth and carefree journey! Highly recommend if you want a hassle-free journey in and around Cape Town.", name: "Ilze Brand", location: "Google review", accent: "#1B4D2E" },
 ];
 
 const areas = [
@@ -248,6 +248,7 @@ export default function HomePage() {
               <div className="flex justify-center gap-1" aria-label="5 star rating">
                 {[...Array(5)].map((_, i) => <Star key={i} size={20} fill="#C9A84C" className="text-[#C9A84C]" aria-hidden="true" />)}
               </div>
+              <p className="text-slate-500 text-sm mt-3">Rated <strong className="text-slate-700">5.0</strong> from real Google reviews</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {testimonials.map(({ quote, name, location, accent }) => (
@@ -270,7 +271,7 @@ export default function HomePage() {
             </div>
             <div className="text-center mt-12">
               <a
-                href="https://share.google/t3fEMzN8S2qNOZFUx"
+                href="https://www.google.com/search?q=Traveler+Shuttles+and+Tours&ludocid=7520964266875884465#lrd=0x1dcc57b71d1318fd:0x685fd527278b13b1,1,,,"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 bg-white border border-slate-200 hover:border-[#C9A84C] shadow-sm hover:shadow-md text-slate-700 font-semibold text-sm px-6 py-3.5 rounded-full transition-all"
