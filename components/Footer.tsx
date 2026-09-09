@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { Phone, Mail, MessageCircle, Lock } from "lucide-react";
 
 export default function Footer() {
@@ -12,15 +11,9 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           {/* Brand */}
           <div className="lg:col-span-2">
-            <div className="mb-4">
-              <Image
-                src="/logo-white.png"
-                alt="Traveler Shuttles and Tours"
-                width={420}
-                height={420}
-                className="h-32 w-auto"
-              />
-            </div>
+            <p className="text-xl font-bold text-[#C9A84C] mb-4 tracking-tight">
+              Traveler Shuttles and Tours
+            </p>
             <p className="text-white/55 text-sm leading-relaxed max-w-xs">
               Professional shuttle transfers and private chauffeur service across the Western Cape.
               Airport transfers, corporate accounts, and hospitality partnerships.
