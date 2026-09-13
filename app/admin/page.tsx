@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { LogOut, Check, X, CalendarDays, Clock, Loader2, Users, MapPin, Phone, Mail, ChevronDown, ChevronUp, Plane, RefreshCw } from "lucide-react";
+import { LogOut, Check, X, CalendarDays, Clock, Loader2, Users, MapPin, Phone, Mail, ChevronDown, ChevronUp, Plane, RefreshCw, LayoutDashboard, ListChecks } from "lucide-react";
 import { formatPickupTime } from "@/lib/time";
+import AdminOverview from "@/components/AdminOverview";
 
 type BookingStatus = "pending" | "confirmed" | "cancelled";
 
@@ -425,6 +426,7 @@ function BookingCard({ booking, onUpdate, defaultExpanded }: { booking: Booking;
 function Dashboard() {
   const [bookings, setBookings]   = useState<Booking[]>([]);
   const [loading, setLoading]     = useState(true);
+  const [tab, setTab]             = useState<"overview" | "bookings">("overview");
   const [filter, setFilter]       = useState<"all" | BookingStatus>("all");
   const [highlight, setHighlight] = useState<string | null>(null);
 
@@ -438,10 +440,10 @@ function Dashboard() {
 
   useEffect(() => { load(); }, [load]);
 
-  // Deep link from the driver email: /admin?booking=<id> opens that booking expanded.
+  // Deep link from the driver email: /admin?booking=<id> opens that booking expanded on the bookings tab.
   useEffect(() => {
     const b = new URLSearchParams(window.location.search).get("booking");
-    if (b) setHighlight(b);
+    if (b) { setHighlight(b); setTab("bookings"); }
   }, []);
 
   const logout = async () => {
@@ -449,60 +451,102 @@ function Dashboard() {
     window.location.reload();
   };
 
+  // Jump from an overview card/row straight to that booking, expanded.
+  const openBooking = (id: string) => {
+    setHighlight(id);
+    setFilter("all");
+    setTab("bookings");
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const goToBookings = (f: "all" | BookingStatus) => {
+    setFilter(f);
+    setTab("bookings");
+  };
+
   const filtered = filter === "all" ? bookings : bookings.filter(b => b.status === filter);
   const pending  = bookings.filter(b => b.status === "pending").length;
 
+  const TABS = [
+    { key: "overview" as const, label: "Overview", icon: LayoutDashboard },
+    { key: "bookings" as const, label: "Bookings", icon: ListChecks },
+  ];
+
   return (
     <div className="min-h-screen bg-slate-50">
-      <header style={{ background: "linear-gradient(90deg, #133820, #132950)" }} className="px-6 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div>
-            <p className="text-white font-bold text-sm">Traveler Shuttles Admin</p>
-            <p className="text-white/50 text-xs">Driver Dashboard</p>
+      <header style={{ background: "linear-gradient(90deg, #133820, #132950)" }} className="px-6 pt-4 sticky top-0 z-40">
+        <div className="max-w-5xl mx-auto">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-white font-bold text-sm">Traveler Shuttles Admin</p>
+              <p className="text-white/50 text-xs">Operations Dashboard</p>
+            </div>
+            <button onClick={logout} className="flex items-center gap-1.5 text-white/60 hover:text-white text-xs transition">
+              <LogOut size={13} /> Sign out
+            </button>
           </div>
-          <button onClick={logout} className="flex items-center gap-1.5 text-white/60 hover:text-white text-xs transition">
-            <LogOut size={13} /> Sign out
-          </button>
+          {/* Tabs */}
+          <div className="flex gap-1 mt-3 -mb-px">
+            {TABS.map(t => {
+              const active = tab === t.key;
+              return (
+                <button key={t.key} onClick={() => setTab(t.key)}
+                  className={`flex items-center gap-1.5 px-4 py-2.5 rounded-t-xl text-xs font-semibold transition
+                    ${active ? "bg-slate-50 text-[#1B3A6B]" : "text-white/60 hover:text-white hover:bg-white/5"}`}>
+                  <t.icon size={14} /> {t.label}
+                  {t.key === "bookings" && pending > 0 && (
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${active ? "bg-amber-100 text-amber-700" : "bg-amber-400/90 text-[#133820]"}`}>{pending}</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-4 py-8 grid lg:grid-cols-[1fr_320px] gap-6 items-start">
-        {/* Bookings */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-slate-800 flex items-center gap-2">
-              Bookings
-              {pending > 0 && (
-                <span className="bg-amber-100 text-amber-700 text-xs font-bold px-2 py-0.5 rounded-full">{pending} pending</span>
-              )}
-            </h2>
-            <div className="flex gap-1">
-              {(["all", "pending", "confirmed", "cancelled"] as const).map(s => (
-                <button key={s} onClick={() => setFilter(s)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition capitalize
-                    ${filter === s ? "bg-[#1B3A6B] text-white" : "bg-white text-slate-500 hover:bg-slate-100"}`}>
-                  {s}
-                </button>
-              ))}
+      {loading ? (
+        <div className="text-center py-24 text-slate-400"><Loader2 size={24} className="animate-spin mx-auto" /></div>
+      ) : tab === "overview" ? (
+        <div className="max-w-5xl mx-auto px-4 py-8">
+          <AdminOverview bookings={bookings} onOpenBooking={openBooking} onGoToBookings={goToBookings} />
+        </div>
+      ) : (
+        <div className="max-w-5xl mx-auto px-4 py-8 grid lg:grid-cols-[1fr_320px] gap-6 items-start">
+          {/* Bookings */}
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-semibold text-slate-800 flex items-center gap-2">
+                Bookings
+                {pending > 0 && (
+                  <span className="bg-amber-100 text-amber-700 text-xs font-bold px-2 py-0.5 rounded-full">{pending} pending</span>
+                )}
+              </h2>
+              <div className="flex gap-1">
+                {(["all", "pending", "confirmed", "cancelled"] as const).map(s => (
+                  <button key={s} onClick={() => setFilter(s)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition capitalize
+                      ${filter === s ? "bg-[#1B3A6B] text-white" : "bg-white text-slate-500 hover:bg-slate-100"}`}>
+                    {s}
+                  </button>
+                ))}
+              </div>
             </div>
+
+            {filtered.length === 0 ? (
+              <div className="text-center py-16 text-slate-400 text-sm">No {filter !== "all" ? filter : ""} bookings yet.</div>
+            ) : (
+              <div className="space-y-3">
+                {filtered.map(b => <BookingCard key={b.id} booking={b} onUpdate={load} defaultExpanded={highlight != null && (b.id === highlight || b.id.startsWith(highlight.toLowerCase()))} />)}
+              </div>
+            )}
           </div>
 
-          {loading ? (
-            <div className="text-center py-16 text-slate-400"><Loader2 size={24} className="animate-spin mx-auto" /></div>
-          ) : filtered.length === 0 ? (
-            <div className="text-center py-16 text-slate-400 text-sm">No {filter !== "all" ? filter : ""} bookings yet.</div>
-          ) : (
-            <div className="space-y-3">
-              {filtered.map(b => <BookingCard key={b.id} booking={b} onUpdate={load} defaultExpanded={highlight != null && (b.id === highlight || b.id.startsWith(highlight.toLowerCase()))} />)}
-            </div>
-          )}
+          {/* Calendar */}
+          <div className="sticky top-24">
+            <AdminCalendar />
+          </div>
         </div>
-
-        {/* Calendar */}
-        <div className="sticky top-4">
-          <AdminCalendar />
-        </div>
-      </div>
+      )}
     </div>
   );
 }
