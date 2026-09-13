@@ -132,7 +132,9 @@ export default function DashboardPage() {
 
     const { data } = await sb
       .from("bookings")
-      .select("*")
+      .select(
+        "id,created_at,client_name,pickup_address,dropoff_address,passengers,trip_type,customer_tier,pricing_band,fare_zar,preferred_date,preferred_time_window,status",
+      )
       .eq("user_id", u.id)
       .order("created_at", { ascending: false });
 
@@ -157,6 +159,7 @@ export default function DashboardPage() {
 
   const upcomingCount = bookings.filter(b => b.status === "confirmed" && (b.preferred_date ?? "") >= today).length;
   const pendingCount  = bookings.filter(b => b.status === "pending").length;
+  const totalSpent    = bookings.filter(b => b.status === "confirmed").reduce((s, b) => s + (b.fare_zar ?? 0), 0);
   const firstName     = user?.user_metadata?.full_name?.split(" ")[0] ?? "there";
 
   if (loading) {
@@ -190,7 +193,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
             <p className="text-2xl font-bold text-[#1B3A6B]">{bookings.length}</p>
             <p className="text-slate-500 text-xs mt-1">Total bookings</p>
@@ -202,6 +205,12 @@ export default function DashboardPage() {
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
             <p className={`text-2xl font-bold ${pendingCount > 0 ? "text-amber-600" : "text-slate-300"}`}>{pendingCount}</p>
             <p className="text-slate-500 text-xs mt-1">Pending</p>
+          </div>
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+            <p className="text-2xl font-bold text-[#1B3A6B] tabular-nums">
+              {totalSpent > 0 ? `R ${totalSpent.toLocaleString("en-ZA")}` : "—"}
+            </p>
+            <p className="text-slate-500 text-xs mt-1">Total spent</p>
           </div>
         </div>
 

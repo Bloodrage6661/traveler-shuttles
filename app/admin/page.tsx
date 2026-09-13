@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { LogOut, Check, X, CalendarDays, Clock, Loader2, Users, MapPin, Phone, Mail, ChevronDown, ChevronUp, Plane, RefreshCw, LayoutDashboard, ListChecks } from "lucide-react";
+import { LogOut, Check, X, CalendarDays, Clock, Loader2, Users, MapPin, Phone, Mail, ChevronDown, ChevronUp, Plane, RefreshCw, LayoutDashboard, ListChecks, Wallet } from "lucide-react";
 import { formatPickupTime } from "@/lib/time";
 import AdminOverview from "@/components/AdminOverview";
+import AdminFinance from "@/components/AdminFinance";
 
 type BookingStatus = "pending" | "confirmed" | "cancelled";
 
@@ -423,22 +424,10 @@ function BookingCard({ booking, onUpdate, defaultExpanded }: { booking: Booking;
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 
-function Dashboard() {
-  const [bookings, setBookings]   = useState<Booking[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [tab, setTab]             = useState<"overview" | "bookings">("overview");
+function Dashboard({ bookings, loading, reload }: { bookings: Booking[]; loading: boolean; reload: () => void }) {
+  const [tab, setTab]             = useState<"overview" | "finance" | "bookings">("overview");
   const [filter, setFilter]       = useState<"all" | BookingStatus>("all");
   const [highlight, setHighlight] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    const res = await fetch("/api/admin/bookings");
-    const data = await res.json();
-    setBookings(data.bookings ?? []);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
 
   // Deep link from the driver email: /admin?booking=<id> opens that booking expanded on the bookings tab.
   useEffect(() => {
@@ -469,6 +458,7 @@ function Dashboard() {
 
   const TABS = [
     { key: "overview" as const, label: "Overview", icon: LayoutDashboard },
+    { key: "finance" as const, label: "Finance", icon: Wallet },
     { key: "bookings" as const, label: "Bookings", icon: ListChecks },
   ];
 
@@ -510,6 +500,10 @@ function Dashboard() {
         <div className="max-w-5xl mx-auto px-4 py-8">
           <AdminOverview bookings={bookings} onOpenBooking={openBooking} onGoToBookings={goToBookings} />
         </div>
+      ) : tab === "finance" ? (
+        <div className="max-w-5xl mx-auto px-4 py-8">
+          <AdminFinance bookings={bookings} onOpenBooking={openBooking} />
+        </div>
       ) : (
         <div className="max-w-5xl mx-auto px-4 py-8 grid lg:grid-cols-[1fr_320px] gap-6 items-start">
           {/* Bookings */}
@@ -536,7 +530,7 @@ function Dashboard() {
               <div className="text-center py-16 text-slate-400 text-sm">No {filter !== "all" ? filter : ""} bookings yet.</div>
             ) : (
               <div className="space-y-3">
-                {filtered.map(b => <BookingCard key={b.id} booking={b} onUpdate={load} defaultExpanded={highlight != null && (b.id === highlight || b.id.startsWith(highlight.toLowerCase()))} />)}
+                {filtered.map(b => <BookingCard key={b.id} booking={b} onUpdate={reload} defaultExpanded={highlight != null && (b.id === highlight || b.id.startsWith(highlight.toLowerCase()))} />)}
               </div>
             )}
           </div>
@@ -554,13 +548,28 @@ function Dashboard() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminPage() {
-  const [authed, setAuthed] = useState<boolean | null>(null);
+  const [authed, setAuthed]   = useState<boolean | null>(null);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetch("/api/admin/bookings")
-      .then(r => setAuthed(r.status !== 401))
-      .catch(() => setAuthed(false));
+  // Single fetch: it both proves the session (401 → login) and loads the data,
+  // so the admin panel makes ONE round-trip on load instead of two.
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/bookings");
+      if (res.status === 401) { setAuthed(false); return; }
+      const data = await res.json();
+      setBookings(data.bookings ?? []);
+      setAuthed(true);
+    } catch {
+      setAuthed(false);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => { load(); }, [load]);
 
   if (authed === null) return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: "linear-gradient(135deg, #0F2B1A, #1B3A6B)" }}>
@@ -568,6 +577,6 @@ export default function AdminPage() {
     </div>
   );
 
-  if (!authed) return <LoginForm onLogin={() => setAuthed(true)} />;
-  return <Dashboard />;
+  if (!authed) return <LoginForm onLogin={load} />;
+  return <Dashboard bookings={bookings} loading={loading} reload={load} />;
 }
