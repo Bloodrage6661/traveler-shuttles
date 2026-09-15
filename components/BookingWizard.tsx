@@ -1,9 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Plane, Car, Users, Phone, Mail, User, ChevronRight, Check, Loader2, Clock } from "lucide-react";
+import { Plane, Car, Users, Phone, Mail, User, ChevronRight, Check, Loader2, Clock, CalendarDays, X } from "lucide-react";
 import { formatRand, applyWeekendSurcharge, isWeekendDate, WEEKEND_SURCHARGE, BAND_LABELS, TIER_LABELS, TIER_DESCRIPTIONS, type PricingBand, type CustomerTier } from "@/lib/pricing";
 import { PICKUP_MIN, PICKUP_MAX, isPickupTimeInRange, formatPickupTime } from "@/lib/time";
+
+type SlotResult = { available: boolean; message: string };
+
+async function runSlotCheck(date: string, time: string): Promise<SlotResult> {
+  const res = await fetch(`/api/availability/slot?date=${date}&time=${time}`);
+  return res.json();
+}
 import { useAuth } from "@/lib/auth";
 import AddressAutocomplete, { type SelectedPlace } from "@/components/AddressAutocomplete";
 
@@ -173,6 +180,38 @@ export default function BookingWizard() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [pickupTime,   setPickupTime]   = useState<string>("");
 
+  // Step 1 availability checker
+  const [checkDate,   setCheckDate]   = useState<string>("");
+  const [checkTime,   setCheckTime]   = useState<string>("");
+  const [checking,    setChecking]    = useState(false);
+  const [checkResult, setCheckResult] = useState<SlotResult | null>(null);
+
+  // Live check on the final Date & Time step.
+  const [finalSlot, setFinalSlot] = useState<SlotResult | null>(null);
+
+  const todayISO = new Date().toISOString().slice(0, 10);
+
+  const checkFinal = async (date: string, time: string) => {
+    if (!date || !time || !isPickupTimeInRange(time)) { setFinalSlot(null); return; }
+    try { setFinalSlot(await runSlotCheck(date, time)); } catch { setFinalSlot(null); }
+  };
+
+  const checkAvailability = async () => {
+    if (!checkDate || !checkTime) { setCheckResult({ available: false, message: "Pick a date and time to check." }); return; }
+    setChecking(true);
+    setCheckResult(null);
+    try {
+      const result = await runSlotCheck(checkDate, checkTime);
+      setCheckResult(result);
+      // Carry an available slot through to the final step so it's pre-filled.
+      if (result.available) { setSelectedDate(checkDate); setPickupTime(checkTime); }
+    } catch {
+      setCheckResult({ available: false, message: "Couldn't check right now — please try again." });
+    } finally {
+      setChecking(false);
+    }
+  };
+
   // Result
   const [bookingRef, setBookingRef] = useState<string | null>(null);
 
@@ -221,7 +260,7 @@ export default function BookingWizard() {
   const handleSubmit = async () => {
     setError(null);
     if (!selectedDate || !pickupTime) { setError("Please select a date and pickup time."); return; }
-    if (!isPickupTimeInRange(pickupTime)) { setError("Pickup time must be between 4:00 AM and 6:00 PM."); return; }
+    if (!isPickupTimeInRange(pickupTime)) { setError("Pickup time must be between 04:00 and 24:00."); return; }
     setLoading(true);
     try {
       const res = await fetch("/api/bookings", {
@@ -321,6 +360,38 @@ export default function BookingWizard() {
         {/* ── Step 1: Details ── */}
         {step === "details" && (
           <div className="space-y-4">
+            {/* Availability checker */}
+            <div className="rounded-2xl border border-[#1B3A6B]/15 bg-[#1B3A6B]/[0.03] p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <CalendarDays size={16} className="text-[#1B3A6B]" />
+                <h3 className="font-semibold text-slate-800 text-sm">Check availability</h3>
+              </div>
+              <p className="text-xs text-slate-500 mb-3">See if your date &amp; time is open before you book. Pickups 04:00–24:00.</p>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="date" value={checkDate} min={todayISO}
+                  onChange={e => { setCheckDate(e.target.value); setCheckResult(null); }}
+                  className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-[#1B3A6B] focus:ring-2 focus:ring-[#1B3A6B]/10"
+                />
+                <input
+                  type="time" value={checkTime} min={PICKUP_MIN} max={PICKUP_MAX} step={900}
+                  onChange={e => { setCheckTime(e.target.value); setCheckResult(null); }}
+                  className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-[#1B3A6B] focus:ring-2 focus:ring-[#1B3A6B]/10"
+                />
+                <button type="button" onClick={checkAvailability} disabled={checking}
+                  className="rounded-xl bg-[#1B3A6B] text-white text-sm font-semibold px-4 py-2.5 hover:bg-[#224889] transition disabled:opacity-60 flex items-center justify-center gap-1.5 whitespace-nowrap">
+                  {checking ? <Loader2 size={14} className="animate-spin" /> : "Check"}
+                </button>
+              </div>
+              {checkResult && (
+                <div className={`mt-3 flex items-start gap-2 rounded-xl px-3 py-2.5 text-xs font-medium
+                  ${checkResult.available ? "bg-[#1B4D2E]/10 text-[#1B4D2E]" : "bg-red-50 text-red-600"}`}>
+                  {checkResult.available ? <Check size={14} className="mt-0.5 shrink-0" /> : <X size={14} className="mt-0.5 shrink-0" />}
+                  <span>{checkResult.message}{checkResult.available && " We've carried this date & time through to your booking."}</span>
+                </div>
+              )}
+            </div>
+
             <h2 className="font-semibold text-slate-800 text-lg mb-4">Your Details</h2>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>First name</Label><Field icon={User} placeholder="Jane" value={firstName} onChange={e => setFirstName(e.target.value)} /></div>
@@ -458,7 +529,7 @@ export default function BookingWizard() {
             <h2 className="font-semibold text-slate-800 text-lg mb-2">Choose a Date</h2>
             <p className="text-slate-500 text-sm mb-5">Green dates are available. Select your preferred day.</p>
 
-            <AvailabilityCalendar selectedDate={selectedDate} onSelect={setSelectedDate} />
+            <AvailabilityCalendar selectedDate={selectedDate} onSelect={d => { setSelectedDate(d); setFinalSlot(null); if (pickupTime) checkFinal(d, pickupTime); }} />
 
             {selectedDate && (
               <div className="mt-5">
@@ -471,21 +542,28 @@ export default function BookingWizard() {
                     min={PICKUP_MIN}
                     max={PICKUP_MAX}
                     step={900}
-                    onChange={e => setPickupTime(e.target.value)}
+                    onChange={e => { setPickupTime(e.target.value); checkFinal(selectedDate, e.target.value); }}
                     className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pl-9 text-sm text-slate-800 outline-none transition focus:border-[#1B3A6B] focus:ring-2 focus:ring-[#1B3A6B]/10"
                   />
                 </div>
                 <p className="text-xs text-slate-400 mt-1.5">
-                  Pickups available between 4:00 AM and 6:00 PM.
+                  Pickups available between 04:00 and 24:00.
                   {pickupTime && isPickupTimeInRange(pickupTime) && (
                     <span className="text-[#1B4D2E] font-medium"> · You&apos;ve selected {formatPickupTime(pickupTime)}</span>
                   )}
                 </p>
+                {finalSlot && (
+                  <div className={`mt-2 flex items-start gap-2 rounded-xl px-3 py-2 text-xs font-medium
+                    ${finalSlot.available ? "bg-[#1B4D2E]/10 text-[#1B4D2E]" : "bg-red-50 text-red-600"}`}>
+                    {finalSlot.available ? <Check size={13} className="mt-0.5 shrink-0" /> : <X size={13} className="mt-0.5 shrink-0" />}
+                    <span>{finalSlot.message}</span>
+                  </div>
+                )}
               </div>
             )}
 
             {error && <p className="text-red-500 text-sm mt-4">{error}</p>}
-            <button onClick={handleSubmit} disabled={loading || !selectedDate || !pickupTime}
+            <button onClick={handleSubmit} disabled={loading || !selectedDate || !pickupTime || (finalSlot != null && !finalSlot.available)}
               className="w-full mt-6 py-3.5 rounded-xl bg-[#1B4D2E] text-white font-bold text-sm flex items-center justify-center gap-2 hover:bg-[#246038] transition disabled:opacity-50">
               {loading ? <Loader2 size={16} className="animate-spin" /> : <><Check size={16} /> Confirm Booking Request</>}
             </button>

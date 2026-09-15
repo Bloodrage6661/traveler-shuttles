@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { sendDriverNotification, sendClientPending } from "@/lib/email";
+import { checkSlot } from "@/lib/availability";
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,6 +18,15 @@ export async function POST(req: NextRequest) {
 
     if (!clientName || !clientEmail || !clientCell || !pickupAddress || !dropoffAddress) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    // For scheduled (non-quote) bookings, re-check the slot server-side so a
+    // day/time that was taken between the client's check and submit is rejected.
+    if (preferredDate && preferredTimeWindow) {
+      const slot = await checkSlot(preferredDate, preferredTimeWindow);
+      if (!slot.available) {
+        return NextResponse.json({ error: slot.message }, { status: 409 });
+      }
     }
 
     const cleanFlight = typeof flightNumber === "string" && flightNumber.trim()

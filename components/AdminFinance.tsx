@@ -1,8 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import {
   Wallet, TrendingUp, TrendingDown, CalendarClock, Clock,
-  PiggyBank, ArrowRight, Receipt,
+  PiggyBank, ArrowRight, Receipt, Users, ArrowUp, ArrowDown,
 } from "lucide-react";
 
 type BookingStatus = "pending" | "confirmed" | "cancelled";
@@ -17,6 +18,8 @@ export interface FinanceBooking {
   preferred_date: string | null;
   status: BookingStatus;
 }
+
+type Agg = { revenue: number; count: number };
 
 const TRIP_LABELS: Record<string, string> = {
   to_airport: "To Airport",
@@ -74,25 +77,41 @@ export default function AdminFinance({
   }
   const maxMonth = Math.max(1, ...months.map((m) => m.value));
 
-  // Revenue split by trip type + tier.
-  const byGroup = (field: "trip_type" | "customer_tier") =>
+  // Revenue split by trip type + tier + customer, with trip counts and averages.
+  const byGroup = (field: "trip_type" | "customer_tier" | "client_name") =>
     Object.entries(
-      confirmed.reduce<Record<string, number>>((acc, b) => {
-        const k = b[field] || "—";
-        acc[k] = (acc[k] ?? 0) + (b.fare_zar ?? 0);
+      confirmed.reduce<Record<string, Agg>>((acc, b) => {
+        const k = (b[field] as string) || "—";
+        if (!acc[k]) acc[k] = { revenue: 0, count: 0 };
+        acc[k].revenue += b.fare_zar ?? 0;
+        acc[k].count += 1;
         return acc;
       }, {}),
-    ).sort((a, b) => b[1] - a[1]);
+    ).sort((a, b) => b[1].revenue - a[1].revenue);
 
   const byTrip = byGroup("trip_type");
   const byTier = byGroup("customer_tier");
-  const tripMax = Math.max(1, ...byTrip.map(([, v]) => v));
-  const tierMax = Math.max(1, ...byTier.map(([, v]) => v));
+  const byCustomer = byGroup("client_name");
+  const tripMax = Math.max(1, ...byTrip.map(([, v]) => v.revenue));
+  const tierMax = Math.max(1, ...byTier.map(([, v]) => v.revenue));
 
+  // Recent confirmed fares — sortable by name or date, asc/desc.
+  const [sortKey, setSortKey] = useState<"date" | "name">("date");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const recent = confirmed
     .slice()
-    .sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""))
-    .slice(0, 6);
+    .sort((a, b) => {
+      const cmp = sortKey === "name"
+        ? (a.client_name ?? "").localeCompare(b.client_name ?? "")
+        : (a.created_at ?? "").localeCompare(b.created_at ?? "");
+      return sortDir === "asc" ? cmp : -cmp;
+    })
+    .slice(0, 8);
+  const toggleSort = (key: "date" | "name") => {
+    if (key === sortKey) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortKey(key); setSortDir(key === "name" ? "asc" : "desc"); }
+  };
+  const SortIcon = sortDir === "asc" ? ArrowUp : ArrowDown;
 
   const cards = [
     {
@@ -192,11 +211,12 @@ export default function AdminFinance({
                 <li key={k}>
                   <div className="flex items-center justify-between text-xs mb-1">
                     <span className="text-slate-600 font-medium">{TRIP_LABELS[k] ?? k}</span>
-                    <span className="text-slate-700 font-semibold tabular-nums">{zar(v)}</span>
+                    <span className="text-slate-700 font-semibold tabular-nums">{zar(v.revenue)}</span>
                   </div>
                   <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
-                    <div className="h-full rounded-full bg-gradient-to-r from-[#1B3A6B] to-[#2b5aa0]" style={{ width: `${(v / tripMax) * 100}%` }} />
+                    <div className="h-full rounded-full bg-gradient-to-r from-[#1B3A6B] to-[#2b5aa0]" style={{ width: `${(v.revenue / tripMax) * 100}%` }} />
                   </div>
+                  <p className="text-[11px] text-slate-400 mt-1">{v.count} trip{v.count !== 1 ? "s" : ""} · avg {zar(v.revenue / v.count)}</p>
                 </li>
               ))}
             </ul>
@@ -214,11 +234,12 @@ export default function AdminFinance({
                 <li key={k}>
                   <div className="flex items-center justify-between text-xs mb-1">
                     <span className="text-slate-600 font-medium capitalize">{k}</span>
-                    <span className="text-slate-700 font-semibold tabular-nums">{zar(v)}</span>
+                    <span className="text-slate-700 font-semibold tabular-nums">{zar(v.revenue)}</span>
                   </div>
                   <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
-                    <div className="h-full rounded-full bg-gradient-to-r from-[#1B4D2E] to-[#C9A84C]" style={{ width: `${(v / tierMax) * 100}%` }} />
+                    <div className="h-full rounded-full bg-gradient-to-r from-[#1B4D2E] to-[#C9A84C]" style={{ width: `${(v.revenue / tierMax) * 100}%` }} />
                   </div>
+                  <p className="text-[11px] text-slate-400 mt-1">{v.count} trip{v.count !== 1 ? "s" : ""} · avg {zar(v.revenue / v.count)}</p>
                 </li>
               ))}
             </ul>
@@ -226,11 +247,55 @@ export default function AdminFinance({
         </section>
       </div>
 
-      {/* Recent confirmed payments */}
+      {/* Per-customer metrics */}
       <section className="bg-white rounded-2xl border border-slate-100 p-5">
         <h2 className="font-semibold text-slate-800 flex items-center gap-2 text-sm mb-3">
-          <Receipt size={16} className="text-[#1B4D2E]" /> Recent confirmed fares
+          <Users size={16} className="text-[#1B3A6B]" /> Per-customer metrics
+          <span className="text-slate-400 font-normal">· top {Math.min(byCustomer.length, 8)}</span>
         </h2>
+        {byCustomer.length === 0 ? <Empty /> : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[420px]">
+              <thead>
+                <tr className="text-[11px] uppercase tracking-wide text-slate-400 text-left">
+                  <th className="font-medium pb-2">Customer</th>
+                  <th className="font-medium pb-2 text-right">Trips</th>
+                  <th className="font-medium pb-2 text-right">Total</th>
+                  <th className="font-medium pb-2 text-right">Avg</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {byCustomer.slice(0, 8).map(([name, v]) => (
+                  <tr key={name}>
+                    <td className="py-2.5 font-medium text-slate-800">{name}</td>
+                    <td className="py-2.5 text-right tabular-nums text-slate-600">{v.count}</td>
+                    <td className="py-2.5 text-right tabular-nums font-semibold text-[#1B4D2E]">{zar(v.revenue)}</td>
+                    <td className="py-2.5 text-right tabular-nums text-slate-600">{zar(v.revenue / v.count)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {/* Recent confirmed payments */}
+      <section className="bg-white rounded-2xl border border-slate-100 p-5">
+        <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+          <h2 className="font-semibold text-slate-800 flex items-center gap-2 text-sm">
+            <Receipt size={16} className="text-[#1B4D2E]" /> Recent confirmed fares
+          </h2>
+          <div className="flex gap-1">
+            {(["date", "name"] as const).map((k) => (
+              <button key={k} onClick={() => toggleSort(k)}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium capitalize transition
+                  ${sortKey === k ? "bg-[#1B3A6B] text-white" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}>
+                {k}
+                {sortKey === k && <SortIcon size={12} />}
+              </button>
+            ))}
+          </div>
+        </div>
         {recent.length === 0 ? <Empty /> : (
           <ul className="divide-y divide-slate-100">
             {recent.map((b) => (
