@@ -250,6 +250,47 @@ export async function sendClientPriceUpdated(booking: {
   });
 }
 
+// Sent when Greg changes the pickup/drop-off time on a confirmed booking.
+export async function sendClientRescheduled(booking: {
+  id: string;
+  clientName: string;
+  clientEmail: string;
+  pickupAddress: string;
+  dropoffAddress: string;
+  passengers: number;
+  preferredDate: string | null;
+  preferredTimeWindow: string | null;
+  dropoffTime: string | null;
+}) {
+  const ref = booking.id.slice(0, 8).toUpperCase();
+  const body = `
+    <h2 style="margin:0 0 4px;font-size:20px;color:${BRAND.dark};">Your Transfer Time Has Changed</h2>
+    <p style="margin:0 0 24px;color:#666;font-size:14px;">Reference: <strong>#${ref}</strong></p>
+    <p style="font-size:15px;color:#333;line-height:1.6;">
+      Hi ${booking.clientName.split(" ")[0]},<br><br>
+      We've updated the schedule for your confirmed transfer. Your booking remains confirmed — here are the new details:
+    </p>
+    <table cellpadding="0" cellspacing="0" style="width:100%;margin:20px 0;background:#f9f9f9;border-radius:8px;padding:16px;">
+      ${row("Pickup", booking.pickupAddress)}
+      ${row("Drop-off", booking.dropoffAddress)}
+      ${row("Passengers", String(booking.passengers))}
+      ${row("Date", booking.preferredDate ?? "TBC")}
+      ${row("Pickup time", `<strong style="color:${BRAND.green};">${formatPickupTime(booking.preferredTimeWindow)}</strong>`)}
+      ${booking.dropoffTime ? row("Drop-off time", `<strong style="color:${BRAND.green};">${formatPickupTime(booking.dropoffTime)}</strong>`) : ""}
+    </table>
+    <p style="font-size:14px;color:#666;">
+      If this new time doesn't work for you, just reply to this email and we'll sort it out.
+      Please have your booking reference <strong>#${ref}</strong> ready.
+    </p>
+  `;
+  await getResend().emails.send({
+    from: "Traveler Shuttles <noreply@travelershuttlesandtours.co.za>",
+    to: booking.clientEmail,
+    subject: `Updated time for booking #${ref} — Traveler Shuttles`,
+    html: layout(body),
+  });
+}
+
 export async function sendClientDeclined(booking: {
   id: string;
   clientName: string;
@@ -281,15 +322,16 @@ export async function sendClientDeclined(booking: {
 // Sends the driver(s) a calendar invite (.ics) for a confirmed trip, plus an
 // "Add to Google Calendar" button. With Gmail set to auto-add invitations, the
 // event lands on the driver's calendar automatically. No Google Cloud needed.
-export async function sendDriverCalendarInvite(booking: InviteBooking) {
+export async function sendDriverCalendarInvite(booking: InviteBooking, sequence = 0) {
   const recipients = CALENDAR_EMAILS.length > 0 ? CALENDAR_EMAILS : DRIVER_EMAILS;
   if (recipients.length === 0) return;
-  const ics = buildBookingIcs(booking, recipients);
+  const ics = buildBookingIcs(booking, recipients, sequence);
   if (!ics) return;
 
   const ref = booking.id.slice(0, 8).toUpperCase();
   const gcal = googleCalendarLink(booking);
-  const when = `${booking.preferredDate ?? "TBC"} · ${formatPickupTime(booking.preferredTimeWindow)}`;
+  const dropoff = booking.dropoffTime ? ` – ${formatPickupTime(booking.dropoffTime)}` : "";
+  const when = `${booking.preferredDate ?? "TBC"} · ${formatPickupTime(booking.preferredTimeWindow)}${dropoff}`;
 
   const body = `
     <h2 style="margin:0 0 4px;font-size:20px;color:${BRAND.dark};">Trip Confirmed — Add to Calendar</h2>

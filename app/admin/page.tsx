@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { LogOut, Check, X, CalendarDays, Clock, Loader2, Users, MapPin, Phone, Mail, ChevronDown, ChevronUp, Plane, RefreshCw, LayoutDashboard, ListChecks, Wallet } from "lucide-react";
-import { formatPickupTime } from "@/lib/time";
+import { LogOut, Check, X, CalendarDays, Clock, Loader2, Users, MapPin, Phone, Mail, ChevronDown, ChevronUp, Plane, RefreshCw, LayoutDashboard, ListChecks, Wallet, CalendarClock } from "lucide-react";
+import { formatPickupTime, PICKUP_MIN, PICKUP_MAX } from "@/lib/time";
 import AdminOverview from "@/components/AdminOverview";
 import AdminFinance from "@/components/AdminFinance";
 
@@ -24,6 +24,7 @@ interface Booking {
   fare_zar: number | null;
   preferred_date: string | null;
   preferred_time_window: string | null;
+  dropoff_time: string | null;
   flight_number: string | null;
   status: BookingStatus;
 }
@@ -285,6 +286,13 @@ function BookingCard({ booking, onUpdate, defaultExpanded }: { booking: Booking;
   const [finalPrice, setFinalPrice] = useState<string>(booking.fare_zar != null ? String(booking.fare_zar) : "");
   const [priceSaved, setPriceSaved] = useState(false);
 
+  // Reschedule editor state (pickup date/time + optional drop-off time).
+  const [rDate, setRDate]       = useState(booking.preferred_date ?? "");
+  const [rPickup, setRPickup]   = useState(booking.preferred_time_window ?? "");
+  const [rDropoff, setRDropoff] = useState(booking.dropoff_time ?? "");
+  const [reschedMsg, setReschedMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [reschedLoading, setReschedLoading] = useState(false);
+
   const act = async (action: "confirm" | "cancel" | "update_price") => {
     setLoading(true);
     setPriceSaved(false);
@@ -299,6 +307,26 @@ function BookingCard({ booking, onUpdate, defaultExpanded }: { booking: Booking;
     setLoading(false);
     if (action === "update_price") { setPriceSaved(true); setTimeout(() => setPriceSaved(false), 4000); }
     onUpdate();
+  };
+
+  const saveReschedule = async () => {
+    setReschedMsg(null);
+    setReschedLoading(true);
+    try {
+      const res = await fetch(`/api/admin/bookings/${booking.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reschedule", preferredDate: rDate, pickupTime: rPickup, dropoffTime: rDropoff || undefined }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setReschedMsg({ ok: false, text: data.error ?? "Couldn't save the new time." }); return; }
+      setReschedMsg({ ok: true, text: booking.status === "confirmed" ? "Saved — calendar updated and client notified." : "Saved — calendar updated." });
+      onUpdate();
+    } catch {
+      setReschedMsg({ ok: false, text: "Something went wrong. Please try again." });
+    } finally {
+      setReschedLoading(false);
+    }
   };
 
   const ref = booking.id.slice(0, 8).toUpperCase();
@@ -320,7 +348,7 @@ function BookingCard({ booking, onUpdate, defaultExpanded }: { booking: Booking;
               <span className="flex items-center gap-1"><CalendarDays size={11} />{booking.preferred_date}</span>
             )}
             {booking.preferred_time_window && (
-              <span className="flex items-center gap-1"><Clock size={11} />{formatPickupTime(booking.preferred_time_window)}</span>
+              <span className="flex items-center gap-1"><Clock size={11} />{formatPickupTime(booking.preferred_time_window)}{booking.dropoff_time && ` – ${formatPickupTime(booking.dropoff_time)}`}</span>
             )}
             <span className="flex items-center gap-1"><Users size={11} />{booking.passengers} pax</span>
             {booking.flight_number && (
@@ -358,6 +386,43 @@ function BookingCard({ booking, onUpdate, defaultExpanded }: { booking: Booking;
           {booking.flight_number && (
             <div className="mb-4">
               <FlightTracker flightNumber={booking.flight_number} date={booking.preferred_date} />
+            </div>
+          )}
+
+          {/* Reschedule pickup / drop-off times → pushes to the calendar on save */}
+          {booking.status !== "cancelled" && (
+            <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-xs font-semibold text-slate-600 mb-2.5 flex items-center gap-1.5">
+                <CalendarClock size={13} className="text-[#1B3A6B]" /> Reschedule times
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div>
+                  <label className="block text-[11px] text-slate-500 mb-1">Date</label>
+                  <input type="date" value={rDate} onChange={e => { setRDate(e.target.value); setReschedMsg(null); }}
+                    className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-800 outline-none focus:border-[#1B3A6B] focus:ring-2 focus:ring-[#1B3A6B]/10" />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-slate-500 mb-1">Pickup time</label>
+                  <input type="time" value={rPickup} min={PICKUP_MIN} max={PICKUP_MAX} step={900} onChange={e => { setRPickup(e.target.value); setReschedMsg(null); }}
+                    className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-800 outline-none focus:border-[#1B3A6B] focus:ring-2 focus:ring-[#1B3A6B]/10" />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-slate-500 mb-1">Drop-off time <span className="text-slate-300">(opt)</span></label>
+                  <input type="time" value={rDropoff} min={PICKUP_MIN} max={PICKUP_MAX} step={900} onChange={e => { setRDropoff(e.target.value); setReschedMsg(null); }}
+                    className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-800 outline-none focus:border-[#1B3A6B] focus:ring-2 focus:ring-[#1B3A6B]/10" />
+                </div>
+              </div>
+              <div className="flex items-center gap-3 mt-3">
+                <button onClick={saveReschedule} disabled={reschedLoading || !rDate || !rPickup}
+                  className="py-2 px-4 rounded-lg bg-[#1B3A6B] text-white text-sm font-bold flex items-center justify-center gap-1.5 hover:bg-[#224889] transition disabled:opacity-50">
+                  {reschedLoading ? <Loader2 size={13} className="animate-spin" /> : <><Check size={13} /> Save &amp; update calendar</>}
+                </button>
+                {reschedMsg && (
+                  <span className={`text-xs font-medium flex items-center gap-1 ${reschedMsg.ok ? "text-green-600" : "text-red-500"}`}>
+                    {reschedMsg.ok ? <Check size={12} /> : <X size={12} />}{reschedMsg.text}
+                  </span>
+                )}
+              </div>
             </div>
           )}
 

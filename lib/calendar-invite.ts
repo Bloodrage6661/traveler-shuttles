@@ -17,6 +17,7 @@ export type InviteBooking = {
   fareZar?: number | null;
   preferredDate: string | null;
   preferredTimeWindow: string | null; // holds an "HH:MM" time (or a legacy window name)
+  dropoffTime?: string | null; // optional "HH:MM" drop-off time; sets the event end
 };
 
 function pad(n: number) {
@@ -56,7 +57,13 @@ function times(b: InviteBooking): { start: Date; end: Date } | null {
   if (!dm || !tm) return null;
   // Local SAST -> UTC by subtracting the offset.
   const start = new Date(Date.UTC(+dm[1], +dm[2] - 1, +dm[3], +tm[1] - SAST_OFFSET_HOURS, +tm[2], 0));
-  const end = new Date(start.getTime() + TRIP_MINUTES * 60 * 1000);
+  // Use the explicit drop-off time if given and after the pickup, else a fixed block.
+  const dt = b.dropoffTime ? /^(\d{1,2}):(\d{2})$/.exec(b.dropoffTime) : null;
+  let end = new Date(start.getTime() + TRIP_MINUTES * 60 * 1000);
+  if (dt) {
+    const dropoff = new Date(Date.UTC(+dm[1], +dm[2] - 1, +dm[3], +dt[1] - SAST_OFFSET_HOURS, +dt[2], 0));
+    if (dropoff.getTime() > start.getTime()) end = dropoff;
+  }
   return { start, end };
 }
 
@@ -76,7 +83,8 @@ function descriptionLines(b: InviteBooking): string[] {
     b.tripType ? `Trip: ${b.tripType.replace(/_/g, " ")}` : "",
     `Pickup: ${b.pickupAddress}`,
     `Drop-off: ${b.dropoffAddress}`,
-    `Time: ${formatPickupTime(b.preferredTimeWindow)}`,
+    `Pickup time: ${formatPickupTime(b.preferredTimeWindow)}`,
+    b.dropoffTime ? `Drop-off time: ${formatPickupTime(b.dropoffTime)}` : "",
     `Fare: ${fare}`,
   ].filter(Boolean);
 }
@@ -87,7 +95,7 @@ function esc(s: string) {
 }
 
 /** Builds an iCalendar (.ics) REQUEST invite, or null if the booking can't be scheduled. */
-export function buildBookingIcs(b: InviteBooking, attendees: string[]): string | null {
+export function buildBookingIcs(b: InviteBooking, attendees: string[], sequence = 0): string | null {
   if (!b.preferredDate) return null;
   const t = times(b);
   const ref = b.id.slice(0, 8).toUpperCase();
@@ -129,7 +137,8 @@ export function buildBookingIcs(b: InviteBooking, attendees: string[]): string |
   for (const a of attendees) {
     lines.push(`ATTENDEE;CN=${a};ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE:mailto:${a}`);
   }
-  lines.push("STATUS:CONFIRMED", "SEQUENCE:0", "END:VEVENT", "END:VCALENDAR");
+  // A higher SEQUENCE on the same UID makes calendar clients overwrite the event.
+  lines.push("STATUS:CONFIRMED", `SEQUENCE:${Math.max(0, Math.floor(sequence))}`, "END:VEVENT", "END:VCALENDAR");
 
   void ref;
   return lines.join("\r\n");

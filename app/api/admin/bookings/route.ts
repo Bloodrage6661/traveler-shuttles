@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   const { data: bookings } = await getSupabaseAdmin()
     .from("bookings")
     .select(
-      "id,created_at,client_name,client_email,client_cell,pickup_address,dropoff_address,distance_km,passengers,trip_type,customer_tier,pricing_band,fare_zar,preferred_date,preferred_time_window,flight_number,status",
+      "id,created_at,client_name,client_email,client_cell,pickup_address,dropoff_address,distance_km,passengers,trip_type,customer_tier,pricing_band,fare_zar,preferred_date,preferred_time_window,dropoff_time,flight_number,status",
     )
     .order("created_at", { ascending: false });
 
