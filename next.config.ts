@@ -2,9 +2,10 @@ import type { NextConfig } from "next";
 import path from "node:path";
 
 // React/Turbopack use eval() in development only; production never does.
+// Cloudflare Turnstile (bot check on the contact form) loads its script here.
 const scriptSrc = process.env.NODE_ENV === "production"
-  ? "script-src 'self' 'unsafe-inline'"
-  : "script-src 'self' 'unsafe-inline' 'unsafe-eval'";
+  ? "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com"
+  : "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com";
 
 const csp = [
   "default-src 'self'",
@@ -12,13 +13,14 @@ const csp = [
   "object-src 'none'",
   "frame-ancestors 'none'",
   "form-action 'self'",
-  // Next.js hydration uses inline scripts; no external script hosts are used.
   scriptSrc,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
-  // Browser talks to Supabase (auth/db) and Geoapify (address autocomplete).
-  "connect-src 'self' https://*.supabase.co https://api.geoapify.com",
+  // Turnstile renders its widget in an iframe.
+  "frame-src https://challenges.cloudflare.com",
+  // Browser talks to Supabase (auth/db), Geoapify (autocomplete), Turnstile.
+  "connect-src 'self' https://*.supabase.co https://api.geoapify.com https://challenges.cloudflare.com",
 ].join("; ");
 
 const securityHeaders = [

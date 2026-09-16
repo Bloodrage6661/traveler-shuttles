@@ -7,9 +7,27 @@ export async function POST(req: NextRequest) {
     if (!rateLimit(`contact:${clientIp(req)}`, 5, 10 * 60_000)) {
       return NextResponse.json({ error: "Too many requests. Please try again shortly." }, { status: 429 });
     }
-    const { name, email, phone, message, hp, elapsed } = await req.json();
+    const { name, email, phone, message, hp, elapsed, turnstileToken } = await req.json();
     if (!name || !email || !message) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    // Cloudflare Turnstile: if configured, a valid token is required. This also
+    // stops bots that POST straight to this API (they can't produce a token).
+    const secret = process.env.TURNSTILE_SECRET_KEY;
+    if (secret) {
+      const verify = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          secret,
+          response: typeof turnstileToken === "string" ? turnstileToken : "",
+          remoteip: clientIp(req),
+        }),
+      }).then((r) => r.json()).catch(() => ({ success: false }));
+      if (!verify.success) {
+        return NextResponse.json({ error: "Verification failed. Please try again." }, { status: 400 });
+      }
     }
 
     // Spam filters — for bots we return a normal success so they don't learn

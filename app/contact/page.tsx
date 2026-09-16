@@ -1,10 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import Script from "next/script";
 import { Phone, Mail, MessageCircle, MapPin, Clock, CheckCircle2, ArrowRight, Loader2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (el: HTMLElement, opts: Record<string, unknown>) => string;
+      reset: (id?: string) => void;
+    };
+  }
+}
 
 function Label({ children }: { children: React.ReactNode }) {
   return <label className="block text-sm font-medium text-slate-700 mb-1.5">{children}</label>;
@@ -29,22 +41,43 @@ export default function ContactPage() {
   const [loading, setLoading] = useState(false);
   const [sent,    setSent]    = useState(false);
   const [error,   setError]   = useState("");
+  const [token,   setToken]   = useState(""); // Turnstile token
+
+  const widgetRef = useRef<HTMLDivElement>(null);
+  const widgetIdRef = useRef<string | null>(null);
+
+  const renderTurnstile = () => {
+    if (!TURNSTILE_SITE_KEY || !window.turnstile || !widgetRef.current || widgetIdRef.current) return;
+    widgetIdRef.current = window.turnstile.render(widgetRef.current, {
+      sitekey: TURNSTILE_SITE_KEY,
+      callback: (t: string) => setToken(t),
+      "expired-callback": () => setToken(""),
+      "error-callback": () => setToken(""),
+    });
+  };
+
+  // Render if the script was already loaded (e.g. client-side navigation).
+  useEffect(() => { renderTurnstile(); }, []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     if (!name || !email || !message) { setError("Please fill in all required fields."); return; }
+    if (TURNSTILE_SITE_KEY && !token) { setError("Please complete the verification below."); return; }
     setLoading(true);
     try {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, phone, message, hp, elapsed: Date.now() - loadedAt }),
+        body: JSON.stringify({ name, email, phone, message, hp, elapsed: Date.now() - loadedAt, turnstileToken: token }),
       });
       if (!res.ok) throw new Error("send failed");
       setSent(true);
     } catch {
       setError("Sorry, something went wrong sending your message. Please try again or WhatsApp us.");
+      // Reset the widget so the user can get a fresh token on retry.
+      window.turnstile?.reset(widgetIdRef.current ?? undefined);
+      setToken("");
     } finally {
       setLoading(false);
     }
@@ -122,6 +155,16 @@ export default function ContactPage() {
                       className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 placeholder-slate-400 outline-none transition focus:border-[#1B3A6B] focus:ring-2 focus:ring-[#1B3A6B]/10 resize-none"
                     />
                   </div>
+                  {TURNSTILE_SITE_KEY && (
+                    <>
+                      <Script
+                        src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+                        strategy="afterInteractive"
+                        onLoad={renderTurnstile}
+                      />
+                      <div ref={widgetRef} className="cf-turnstile" />
+                    </>
+                  )}
                   {error && <p className="text-red-500 text-sm" role="alert">{error}</p>}
                   <button
                     type="submit"
