@@ -24,6 +24,8 @@ export default function ContactPage() {
   const [email,   setEmail]   = useState("");
   const [phone,   setPhone]   = useState("");
   const [message, setMessage] = useState("");
+  const [hp,      setHp]      = useState(""); // honeypot — must stay empty
+  const [loadedAt] = useState(() => Date.now());
   const [loading, setLoading] = useState(false);
   const [sent,    setSent]    = useState(false);
   const [error,   setError]   = useState("");
@@ -37,7 +39,7 @@ export default function ContactPage() {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, phone, message }),
+        body: JSON.stringify({ name, email, phone, message, hp, elapsed: Date.now() - loadedAt }),
       });
       if (!res.ok) throw new Error("send failed");
       setSent(true);
@@ -86,6 +88,17 @@ export default function ContactPage() {
                 </div>
               ) : (
                 <form onSubmit={submit} className="space-y-4" noValidate>
+                  {/* Honeypot: hidden from real users; bots fill it and get silently dropped. */}
+                  <input
+                    type="text"
+                    name="company"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    aria-hidden="true"
+                    value={hp}
+                    onChange={e => setHp(e.target.value)}
+                    style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
+                  />
                   <div>
                     <Label>Full name <span className="text-red-400" aria-hidden="true">*</span></Label>
                     <Field type="text" placeholder="Jane Smith" value={name} onChange={e => setName(e.target.value)} autoComplete="name" required />
