@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { LogOut, Check, X, CalendarDays, Clock, Loader2, Users, MapPin, Phone, Mail, ChevronDown, ChevronUp, Plane, RefreshCw, LayoutDashboard, ListChecks, Wallet, CalendarClock } from "lucide-react";
+import { LogOut, Check, X, CalendarDays, Clock, Loader2, Users, MapPin, Phone, Mail, ChevronDown, ChevronUp, Plane, RefreshCw, LayoutDashboard, ListChecks, Wallet, CalendarClock, Search, Plus, Building2, ArrowLeft } from "lucide-react";
 import { formatPickupTime, PICKUP_MIN, PICKUP_MAX } from "@/lib/time";
+import { TIER_LABELS, type CustomerTier } from "@/lib/pricing";
 import AdminOverview from "@/components/AdminOverview";
 import AdminFinance from "@/components/AdminFinance";
 
@@ -12,6 +13,7 @@ interface Booking {
   id: string;
   created_at: string;
   client_name: string;
+  company_name: string | null;
   client_email: string;
   client_cell: string;
   pickup_address: string;
@@ -280,7 +282,7 @@ function AdminCalendar() {
 
 // ─── Booking card ─────────────────────────────────────────────────────────────
 
-function BookingCard({ booking, onUpdate, defaultExpanded }: { booking: Booking; onUpdate: () => void; defaultExpanded?: boolean }) {
+function BookingCard({ booking, onUpdate, defaultExpanded, onSelectCustomer }: { booking: Booking; onUpdate: () => void; defaultExpanded?: boolean; onSelectCustomer?: (email: string) => void }) {
   const [expanded, setExpanded] = useState(defaultExpanded ?? false);
   const [loading, setLoading]   = useState(false);
   const [finalPrice, setFinalPrice] = useState<string>(booking.fare_zar != null ? String(booking.fare_zar) : "");
@@ -337,7 +339,17 @@ function BookingCard({ booking, onUpdate, defaultExpanded }: { booking: Booking;
       <div className="p-5 flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <span className="font-bold text-slate-900">{booking.client_name}</span>
+            {onSelectCustomer && booking.client_email ? (
+              <button onClick={() => onSelectCustomer(booking.client_email)}
+                className="font-bold text-slate-900 hover:text-[#1B3A6B] hover:underline transition" title="View this customer's bookings">
+                {booking.client_name}
+              </button>
+            ) : (
+              <span className="font-bold text-slate-900">{booking.client_name}</span>
+            )}
+            {booking.company_name && (
+              <span className="flex items-center gap-1 bg-[#1B3A6B]/10 text-[#1B3A6B] px-1.5 py-0.5 rounded text-xs font-medium"><Building2 size={10} />{booking.company_name}</span>
+            )}
             <span className="text-xs font-mono text-slate-400">#{ref}</span>
             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[booking.status]}`}>
               {booking.status}
@@ -487,12 +499,122 @@ function BookingCard({ booking, onUpdate, defaultExpanded }: { booking: Booking;
   );
 }
 
+// ─── Manual booking modal ─────────────────────────────────────────────────────
+
+const TRIP_OPTIONS: { value: string; label: string }[] = [
+  { value: "to_airport", label: "To Airport" },
+  { value: "from_airport", label: "From Airport" },
+  { value: "point_to_point", label: "Point-to-point" },
+];
+
+function NewBookingModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  const [f, setF] = useState({
+    clientName: "", companyName: "", clientEmail: "", clientCell: "",
+    pickupAddress: "", dropoffAddress: "",
+    passengers: "1", tripType: "point_to_point", customerTier: "General" as CustomerTier,
+    preferredDate: "", pickupTime: "", dropoffTime: "",
+    fareZar: "", flightNumber: "", status: "confirmed" as BookingStatus,
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const set = (k: keyof typeof f, v: string) => setF(prev => ({ ...prev, [k]: v }));
+
+  const inp = "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-[#1B3A6B] focus:ring-2 focus:ring-[#1B3A6B]/10";
+  const lbl = "block text-[11px] font-medium text-slate-500 mb-1";
+
+  const submit = async () => {
+    setError(null);
+    if (!f.clientName.trim()) { setError("Client name is required."); return; }
+    setSaving(true);
+    try {
+      const res = await fetch("/api/admin/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(f),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setError(data.error ?? "Could not save the booking."); return; }
+      onCreated();
+      onClose();
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4" onClick={onClose}>
+      <div className="my-8 w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-bold text-slate-900 text-lg flex items-center gap-2"><Plus size={18} className="text-[#1B3A6B]" /> New booking</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1"><X size={18} /></button>
+        </div>
+
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className={lbl}>Client name *</label><input className={inp} value={f.clientName} onChange={e => set("clientName", e.target.value)} placeholder="Jane Smith" /></div>
+            <div><label className={lbl}>Company (optional)</label><input className={inp} value={f.companyName} onChange={e => set("companyName", e.target.value)} placeholder="Acme Corp" /></div>
+            <div><label className={lbl}>Email</label><input className={inp} type="email" value={f.clientEmail} onChange={e => set("clientEmail", e.target.value)} placeholder="jane@example.com" /></div>
+            <div><label className={lbl}>Cell</label><input className={inp} type="tel" value={f.clientCell} onChange={e => set("clientCell", e.target.value)} placeholder="+27 82 123 4567" /></div>
+          </div>
+          <div><label className={lbl}>Pickup address</label><input className={inp} value={f.pickupAddress} onChange={e => set("pickupAddress", e.target.value)} placeholder="Pickup" /></div>
+          <div><label className={lbl}>Drop-off address</label><input className={inp} value={f.dropoffAddress} onChange={e => set("dropoffAddress", e.target.value)} placeholder="Drop-off" /></div>
+          <div className="grid grid-cols-3 gap-3">
+            <div><label className={lbl}>Passengers</label><input className={inp} type="number" min="1" value={f.passengers} onChange={e => set("passengers", e.target.value)} /></div>
+            <div>
+              <label className={lbl}>Trip type</label>
+              <select className={inp} value={f.tripType} onChange={e => set("tripType", e.target.value)}>
+                {TRIP_OPTIONS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={lbl}>Customer type</label>
+              <select className={inp} value={f.customerTier} onChange={e => set("customerTier", e.target.value)}>
+                {(Object.keys(TIER_LABELS) as CustomerTier[]).map(t => <option key={t} value={t}>{TIER_LABELS[t]}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div><label className={lbl}>Date</label><input className={inp} type="date" value={f.preferredDate} onChange={e => set("preferredDate", e.target.value)} /></div>
+            <div><label className={lbl}>Pickup time</label><input className={inp} type="time" min={PICKUP_MIN} max={PICKUP_MAX} step={900} value={f.pickupTime} onChange={e => set("pickupTime", e.target.value)} /></div>
+            <div><label className={lbl}>Drop-off time</label><input className={inp} type="time" min={PICKUP_MIN} max={PICKUP_MAX} step={900} value={f.dropoffTime} onChange={e => set("dropoffTime", e.target.value)} /></div>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div><label className={lbl}>Fare (R)</label><input className={inp} type="number" min="0" value={f.fareZar} onChange={e => set("fareZar", e.target.value)} placeholder="e.g. 350" /></div>
+            <div><label className={lbl}>Flight no.</label><input className={inp} value={f.flightNumber} onChange={e => set("flightNumber", e.target.value.toUpperCase())} placeholder="BA349" /></div>
+            <div>
+              <label className={lbl}>Status</label>
+              <select className={inp} value={f.status} onChange={e => set("status", e.target.value)}>
+                <option value="confirmed">Confirmed</option>
+                <option value="pending">Pending</option>
+              </select>
+            </div>
+          </div>
+          {error && <p className="text-red-500 text-sm">{error}</p>}
+          <div className="flex gap-2 pt-1">
+            <button onClick={submit} disabled={saving}
+              className="flex-1 py-2.5 rounded-xl bg-[#1B4D2E] text-white text-sm font-bold flex items-center justify-center gap-1.5 hover:bg-[#246038] transition disabled:opacity-60">
+              {saving ? <Loader2 size={14} className="animate-spin" /> : <><Check size={14} /> Create booking</>}
+            </button>
+            <button onClick={onClose} className="py-2.5 px-4 rounded-xl bg-slate-100 text-slate-600 text-sm font-semibold hover:bg-slate-200 transition">Cancel</button>
+          </div>
+          {f.status === "confirmed" && <p className="text-[11px] text-slate-400">A confirmed booking with a date &amp; time is added to your calendar.</p>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 
 function Dashboard({ bookings, loading, reload }: { bookings: Booking[]; loading: boolean; reload: () => void }) {
   const [tab, setTab]             = useState<"overview" | "finance" | "bookings">("overview");
   const [filter, setFilter]       = useState<"all" | BookingStatus>("all");
   const [highlight, setHighlight] = useState<string | null>(null);
+  const [search, setSearch]       = useState("");
+  const [customerEmail, setCustomerEmail] = useState<string | null>(null);
+  const [showNew, setShowNew]     = useState(false);
 
   // Deep link from the driver email: /admin?booking=<id> opens that booking expanded on the bookings tab.
   useEffect(() => {
@@ -518,8 +640,31 @@ function Dashboard({ bookings, loading, reload }: { bookings: Booking[]; loading
     setTab("bookings");
   };
 
-  const filtered = filter === "all" ? bookings : bookings.filter(b => b.status === filter);
+  const selectCustomer = (email: string) => {
+    setCustomerEmail(email);
+    setSearch("");
+    setFilter("all");
+    setTab("bookings");
+  };
+
+  // Search across name / email / phone / company, or focus one customer by email.
+  const q = search.trim().toLowerCase();
+  let list = bookings;
+  if (customerEmail) {
+    list = list.filter(b => (b.client_email ?? "").toLowerCase() === customerEmail.toLowerCase());
+  } else if (q) {
+    list = list.filter(b =>
+      [b.client_name, b.client_email, b.client_cell, b.company_name]
+        .some(v => (v ?? "").toLowerCase().includes(q)));
+  }
+  const filtered = filter === "all" ? list : list.filter(b => b.status === filter);
   const pending  = bookings.filter(b => b.status === "pending").length;
+
+  // Summary for the focused customer.
+  const customer = customerEmail ? bookings.filter(b => (b.client_email ?? "").toLowerCase() === customerEmail.toLowerCase()) : [];
+  const customerName = customer[0]?.client_name ?? customerEmail ?? "";
+  const customerCompany = customer.find(b => b.company_name)?.company_name ?? null;
+  const customerSpent = customer.filter(b => b.status === "confirmed").reduce((s, b) => s + (b.fare_zar ?? 0), 0);
 
   const TABS = [
     { key: "overview" as const, label: "Overview", icon: LayoutDashboard },
@@ -573,13 +718,30 @@ function Dashboard({ bookings, loading, reload }: { bookings: Booking[]; loading
         <div className="max-w-5xl mx-auto px-4 py-8 grid lg:grid-cols-[1fr_320px] gap-6 items-start">
           {/* Bookings */}
           <div>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
               <h2 className="font-semibold text-slate-800 flex items-center gap-2">
                 Bookings
                 {pending > 0 && (
                   <span className="bg-amber-100 text-amber-700 text-xs font-bold px-2 py-0.5 rounded-full">{pending} pending</span>
                 )}
               </h2>
+              <button onClick={() => setShowNew(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1B4D2E] text-white text-xs font-bold hover:bg-[#246038] transition">
+                <Plus size={14} /> New booking
+              </button>
+            </div>
+
+            {/* Search + status filters */}
+            <div className="flex items-center gap-2 mb-4 flex-wrap">
+              <div className="relative flex-1 min-w-[200px]">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  value={search}
+                  onChange={e => { setSearch(e.target.value); setCustomerEmail(null); }}
+                  placeholder="Search name, email, phone or company…"
+                  className="w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 py-2 text-sm text-slate-800 outline-none focus:border-[#1B3A6B] focus:ring-2 focus:ring-[#1B3A6B]/10"
+                />
+              </div>
               <div className="flex gap-1">
                 {(["all", "pending", "confirmed", "cancelled"] as const).map(s => (
                   <button key={s} onClick={() => setFilter(s)}
@@ -591,11 +753,35 @@ function Dashboard({ bookings, loading, reload }: { bookings: Booking[]; loading
               </div>
             </div>
 
+            {/* Focused-customer banner */}
+            {customerEmail && (
+              <div className="mb-4 rounded-xl border border-[#1B3A6B]/20 bg-[#1B3A6B]/[0.04] p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-bold text-slate-900 flex items-center gap-2 flex-wrap">
+                      {customerName}
+                      {customerCompany && <span className="flex items-center gap-1 bg-[#1B3A6B]/10 text-[#1B3A6B] px-1.5 py-0.5 rounded text-xs font-medium"><Building2 size={10} />{customerCompany}</span>}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-0.5 break-all">{customerEmail}{customer[0]?.client_cell ? ` · ${customer[0].client_cell}` : ""}</p>
+                    <p className="text-xs text-slate-500 mt-1">
+                      <strong className="text-slate-700">{customer.length}</strong> booking{customer.length !== 1 ? "s" : ""} · <strong className="text-slate-700">R {customerSpent.toLocaleString("en-ZA")}</strong> confirmed
+                    </p>
+                  </div>
+                  <button onClick={() => setCustomerEmail(null)}
+                    className="flex items-center gap-1 text-xs text-[#1B3A6B] font-medium hover:underline whitespace-nowrap">
+                    <ArrowLeft size={12} /> All bookings
+                  </button>
+                </div>
+              </div>
+            )}
+
             {filtered.length === 0 ? (
-              <div className="text-center py-16 text-slate-400 text-sm">No {filter !== "all" ? filter : ""} bookings yet.</div>
+              <div className="text-center py-16 text-slate-400 text-sm">
+                {search || customerEmail ? "No bookings match." : `No ${filter !== "all" ? filter : ""} bookings yet.`}
+              </div>
             ) : (
               <div className="space-y-3">
-                {filtered.map(b => <BookingCard key={b.id} booking={b} onUpdate={reload} defaultExpanded={highlight != null && (b.id === highlight || b.id.startsWith(highlight.toLowerCase()))} />)}
+                {filtered.map(b => <BookingCard key={b.id} booking={b} onUpdate={reload} onSelectCustomer={selectCustomer} defaultExpanded={highlight != null && (b.id === highlight || b.id.startsWith(highlight.toLowerCase()))} />)}
               </div>
             )}
           </div>
@@ -606,6 +792,8 @@ function Dashboard({ bookings, loading, reload }: { bookings: Booking[]; loading
           </div>
         </div>
       )}
+
+      {showNew && <NewBookingModal onClose={() => setShowNew(false)} onCreated={reload} />}
     </div>
   );
 }
