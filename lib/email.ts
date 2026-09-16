@@ -54,10 +54,30 @@ function layout(body: string) {
 </html>`;
 }
 
+// Escape user-supplied text before it goes into an HTML email, so a booking or
+// enquiry can't inject markup/links into the messages we send.
+function esc(s: unknown) {
+  return String(s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function row(label: string, value: string) {
   return `<tr>
-    <td style="padding:6px 0;font-size:14px;color:#666;width:140px;">${label}</td>
-    <td style="padding:6px 0;font-size:14px;color:#1a1a1a;font-weight:500;">${value}</td>
+    <td style="padding:6px 0;font-size:14px;color:#666;width:140px;">${esc(label)}</td>
+    <td style="padding:6px 0;font-size:14px;color:#1a1a1a;font-weight:500;">${esc(value)}</td>
+  </tr>`;
+}
+
+// Same as row() but renders the (escaped) value in bold colour — for the few
+// rows that were previously passing raw <strong> HTML.
+function rowStrong(label: string, value: string, color: string) {
+  return `<tr>
+    <td style="padding:6px 0;font-size:14px;color:#666;width:140px;">${esc(label)}</td>
+    <td style="padding:6px 0;font-size:14px;color:#1a1a1a;font-weight:500;"><strong style="color:${color};">${esc(value)}</strong></td>
   </tr>`;
 }
 
@@ -144,11 +164,11 @@ export async function sendClientPending(booking: {
     <h2 style="margin:0 0 4px;font-size:20px;color:${BRAND.dark};">Booking Received</h2>
     <p style="margin:0 0 24px;color:#666;font-size:14px;">Your reference number is <strong>#${ref}</strong></p>
     <p style="font-size:15px;color:#333;line-height:1.6;">
-      Hi ${booking.clientName.split(" ")[0]},<br><br>
+      Hi ${esc(booking.clientName.split(" ")[0])},<br><br>
       Thank you for your booking request. We've received your details and the driver will confirm your transfer shortly.
       Any fare shown was an estimate — we'll confirm the final price in your confirmation email as soon as your booking is accepted.
     </p>
-    ${booking.preferredDate ? `<p style="font-size:14px;color:#666;">Requested date: <strong>${booking.preferredDate}</strong></p>` : ""}
+    ${booking.preferredDate ? `<p style="font-size:14px;color:#666;">Requested date: <strong>${esc(booking.preferredDate)}</strong></p>` : ""}
     <p style="font-size:14px;color:#666;margin-top:24px;">
       Questions? Reply to this email or contact us directly.
     </p>
@@ -180,7 +200,7 @@ export async function sendClientConfirmed(booking: {
     <h2 style="margin:0 0 4px;font-size:20px;color:${BRAND.dark};">Booking Confirmed!</h2>
     <p style="margin:0 0 24px;color:#666;font-size:14px;">Reference: <strong>#${ref}</strong></p>
     <p style="font-size:15px;color:#333;line-height:1.6;">
-      Hi ${booking.clientName.split(" ")[0]},<br><br>
+      Hi ${esc(booking.clientName.split(" ")[0])},<br><br>
       Great news — your transfer has been confirmed. See your booking summary below.
     </p>
     <table cellpadding="0" cellspacing="0" style="width:100%;margin:20px 0;background:#f9f9f9;border-radius:8px;padding:16px;">
@@ -225,7 +245,7 @@ export async function sendClientPriceUpdated(booking: {
     <h2 style="margin:0 0 4px;font-size:20px;color:${BRAND.dark};">Updated Fare for Your Transfer</h2>
     <p style="margin:0 0 24px;color:#666;font-size:14px;">Reference: <strong>#${ref}</strong></p>
     <p style="font-size:15px;color:#333;line-height:1.6;">
-      Hi ${booking.clientName.split(" ")[0]},<br><br>
+      Hi ${esc(booking.clientName.split(" ")[0])},<br><br>
       We've updated the fare for your confirmed transfer. Your booking remains confirmed — here are the latest details:
     </p>
     <table cellpadding="0" cellspacing="0" style="width:100%;margin:20px 0;background:#f9f9f9;border-radius:8px;padding:16px;">
@@ -234,7 +254,7 @@ export async function sendClientPriceUpdated(booking: {
       ${row("Passengers", String(booking.passengers))}
       ${row("Date", booking.preferredDate ?? "TBC")}
       ${row("Pickup time", formatPickupTime(booking.preferredTimeWindow))}
-      ${row("Updated fare", `<strong style="color:${BRAND.green};">${fare}</strong>`)}
+      ${rowStrong("Updated fare", fare, BRAND.green)}
     </table>
     <p style="font-size:14px;color:#666;">
       If you have any questions about this change, just reply to this email.
@@ -267,7 +287,7 @@ export async function sendClientRescheduled(booking: {
     <h2 style="margin:0 0 4px;font-size:20px;color:${BRAND.dark};">Your Transfer Time Has Changed</h2>
     <p style="margin:0 0 24px;color:#666;font-size:14px;">Reference: <strong>#${ref}</strong></p>
     <p style="font-size:15px;color:#333;line-height:1.6;">
-      Hi ${booking.clientName.split(" ")[0]},<br><br>
+      Hi ${esc(booking.clientName.split(" ")[0])},<br><br>
       We've updated the schedule for your confirmed transfer. Your booking remains confirmed — here are the new details:
     </p>
     <table cellpadding="0" cellspacing="0" style="width:100%;margin:20px 0;background:#f9f9f9;border-radius:8px;padding:16px;">
@@ -275,8 +295,8 @@ export async function sendClientRescheduled(booking: {
       ${row("Drop-off", booking.dropoffAddress)}
       ${row("Passengers", String(booking.passengers))}
       ${row("Date", booking.preferredDate ?? "TBC")}
-      ${row("Pickup time", `<strong style="color:${BRAND.green};">${formatPickupTime(booking.preferredTimeWindow)}</strong>`)}
-      ${booking.dropoffTime ? row("Drop-off time", `<strong style="color:${BRAND.green};">${formatPickupTime(booking.dropoffTime)}</strong>`) : ""}
+      ${rowStrong("Pickup time", formatPickupTime(booking.preferredTimeWindow), BRAND.green)}
+      ${booking.dropoffTime ? rowStrong("Drop-off time", formatPickupTime(booking.dropoffTime), BRAND.green) : ""}
     </table>
     <p style="font-size:14px;color:#666;">
       If this new time doesn't work for you, just reply to this email and we'll sort it out.
@@ -301,7 +321,7 @@ export async function sendClientDeclined(booking: {
   const body = `
     <h2 style="margin:0 0 4px;font-size:20px;color:${BRAND.dark};">Booking Update</h2>
     <p style="font-size:15px;color:#333;line-height:1.6;">
-      Hi ${booking.clientName.split(" ")[0]},<br><br>
+      Hi ${esc(booking.clientName.split(" ")[0])},<br><br>
       Unfortunately we're unable to accommodate your transfer request (#${ref}) at this time.
       This may be due to availability constraints on the requested date.
     </p>
@@ -390,7 +410,7 @@ export async function sendEnquiry(enquiry: {
       ${enquiry.phone ? row("Phone", enquiry.phone) : ""}
     </table>
     <p style="font-size:13px;color:#999;margin:0 0 6px;">Message</p>
-    <p style="font-size:15px;color:#333;line-height:1.6;white-space:pre-wrap;background:#f9f9f9;border-radius:8px;padding:14px;">${enquiry.message.replace(/</g, "&lt;")}</p>
+    <p style="font-size:15px;color:#333;line-height:1.6;white-space:pre-wrap;background:#f9f9f9;border-radius:8px;padding:14px;">${esc(enquiry.message)}</p>
   `;
 
   await getResend().emails.send({

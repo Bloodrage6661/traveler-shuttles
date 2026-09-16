@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getFlightStatus } from "@/lib/flight";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 // Live flight lookup: /api/flight-status?flight=BA349&date=2026-09-10
 // Always fresh (no caching) so the admin panel shows real-time status.
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
+  if (!rateLimit(`flight:${clientIp(req)}`, 40, 5 * 60_000)) {
+    return NextResponse.json({ error: "Too many requests", status: null }, { status: 429 });
+  }
   const flight = req.nextUrl.searchParams.get("flight")?.trim();
   const date = req.nextUrl.searchParams.get("date")?.trim();
 

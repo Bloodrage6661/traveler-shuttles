@@ -2,9 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { sendDriverNotification, sendClientPending } from "@/lib/email";
 import { checkSlot } from "@/lib/availability";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
   try {
+    if (!rateLimit(`bookings:${clientIp(req)}`, 6, 5 * 60_000)) {
+      return NextResponse.json({ error: "Too many requests. Please try again shortly." }, { status: 429 });
+    }
     const body = await req.json();
 
     const {

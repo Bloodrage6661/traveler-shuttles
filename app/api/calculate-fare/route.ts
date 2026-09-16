@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getBand, getFare } from "@/lib/pricing";
 import type { CustomerTier } from "@/lib/pricing";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 type Point = { lat: number; lon: number };
 
 export async function POST(req: NextRequest) {
+  if (!rateLimit(`fare:${clientIp(req)}`, 40, 5 * 60_000)) {
+    return NextResponse.json({ error: "Too many requests." }, { status: 429 });
+  }
   const { pickup, dropoff, passengers, customerTier } = (await req.json()) as {
     pickup?: Point;
     dropoff?: Point;
