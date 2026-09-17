@@ -16,16 +16,35 @@ export async function POST(req: NextRequest) {
     // stops bots that POST straight to this API (they can't produce a token).
     const secret = process.env.TURNSTILE_SECRET_KEY;
     if (secret) {
-      const verify = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          secret,
-          response: typeof turnstileToken === "string" ? turnstileToken : "",
-          remoteip: clientIp(req),
-        }),
-      }).then((r) => r.json()).catch(() => ({ success: false }));
-      if (!verify.success) {
+      const token = typeof turnstileToken === "string" ? turnstileToken : "";
+      if (!token || token.length > 2048) {
+        return NextResponse.json({ error: "Verification failed. Please try again." }, { status: 400 });
+      }
+      let verify: { success?: boolean; action?: string; hostname?: string; "error-codes"?: string[] } = { success: false };
+      try {
+        const r = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          signal: AbortSignal.timeout(10_000),
+          body: new URLSearchParams({ secret, response: token, remoteip: clientIp(req) }),
+        });
+        if (!r.ok) throw new Error(`siteverify ${r.status}`);
+        verify = await r.json();
+      } catch {
+        return NextResponse.json({ error: "Verification unavailable. Please try again." }, { status: 400 });
+      }
+
+      // Optional allowlist of the frontend domains that may submit tokens.
+      const allowedHosts = new Set(
+        (process.env.TURNSTILE_HOSTNAMES ?? "").split(",").map((h) => h.trim()).filter(Boolean),
+      );
+      const okAction = verify.action === "contact" || verify.action === undefined;
+      const okHost = allowedHosts.size === 0 || (verify.hostname ? allowedHosts.has(verify.hostname) : false);
+
+      if (!verify.success || !okAction || !okHost) {
+        console.warn("Turnstile verification rejected:", {
+          success: verify.success, action: verify.action, hostname: verify.hostname, errors: verify["error-codes"],
+        });
         return NextResponse.json({ error: "Verification failed. Please try again." }, { status: 400 });
       }
     }

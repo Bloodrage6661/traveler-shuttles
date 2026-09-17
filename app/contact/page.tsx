@@ -50,6 +50,7 @@ export default function ContactPage() {
     if (!TURNSTILE_SITE_KEY || !window.turnstile || !widgetRef.current || widgetIdRef.current) return;
     widgetIdRef.current = window.turnstile.render(widgetRef.current, {
       sitekey: TURNSTILE_SITE_KEY,
+      action: "contact",
       callback: (t: string) => setToken(t),
       "expired-callback": () => setToken(""),
       "error-callback": () => setToken(""),
