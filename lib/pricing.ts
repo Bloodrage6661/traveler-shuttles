@@ -4,9 +4,9 @@ export type CustomerTier = "Corporate" | "Hotel/B&B" | "General";
 // Base fare per distance band + customer tier — this is the price for ONE passenger.
 // The total fare is this base multiplied by the number of passengers (see getFare).
 const BASE_RATES: Record<Exclude<PricingBand, "custom">, Record<CustomerTier, number>> = {
-  "25km": { "Corporate": 350, "Hotel/B&B": 375, "General": 405 },
-  "50km": { "Corporate": 575, "Hotel/B&B": 624, "General": 675 },
-  "75km": { "Corporate": 863, "Hotel/B&B": 938, "General": 1013 },
+  "25km": { "Corporate": 350, "Hotel/B&B": 370, "General": 390 },
+  "50km": { "Corporate": 343, "Hotel/B&B": 363, "General": 383 },
+  "75km": { "Corporate": 336, "Hotel/B&B": 355, "General": 376 },
 };
 
 export function getBand(distanceKm: number): PricingBand {
