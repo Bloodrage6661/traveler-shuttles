@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendEnquiry } from "@/lib/email";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { sendWhatsAppAlert } from "@/lib/whatsapp";
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
 
 export async function POST(req: NextRequest) {
   try {
@@ -65,6 +68,12 @@ export async function POST(req: NextRequest) {
     }
 
     await sendEnquiry({ name, email, phone, message });
+    // WhatsApp Greg the enquiry + a link to the dashboard.
+    await sendWhatsAppAlert(
+      `New enquiry from ${name}`,
+      `${email}${phone ? " · " + phone : ""} — ${message}`,
+      `${BASE_URL}/admin`,
+    );
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("Enquiry error:", err);

@@ -3,6 +3,9 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 import { sendDriverNotification, sendClientPending } from "@/lib/email";
 import { checkSlot } from "@/lib/availability";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { sendWhatsAppAlert } from "@/lib/whatsapp";
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
 
 export async function POST(req: NextRequest) {
   try {
@@ -94,6 +97,12 @@ export async function POST(req: NextRequest) {
         clientEmail,
         preferredDate,
       }),
+      // WhatsApp Greg with the details + a dashboard link to accept the booking.
+      sendWhatsAppAlert(
+        `New booking from ${clientName}`,
+        `${preferredDate ?? "date TBC"} ${preferredTimeWindow ?? ""} · ${passengers ?? 1} pax · ${fareZar ? "R" + fareZar : "custom quote"}${cleanFlight ? " · " + cleanFlight : ""}`,
+        `${BASE_URL}/admin?booking=${booking.id}`,
+      ),
     ]);
 
     return NextResponse.json({
