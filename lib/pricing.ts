@@ -1,12 +1,13 @@
 export type PricingBand = "25km" | "50km" | "75km" | "custom";
 export type CustomerTier = "Corporate" | "Hotel/B&B" | "General";
 
-// Base fare per distance band + customer tier — this is the price for ONE passenger.
-// The total fare is this base multiplied by the number of passengers (see getFare).
-const BASE_RATES: Record<Exclude<PricingBand, "custom">, Record<CustomerTier, number>> = {
-  "25km": { "Corporate": 350, "Hotel/B&B": 370, "General": 390 },
-  "50km": { "Corporate": 343, "Hotel/B&B": 363, "General": 383 },
-  "75km": { "Corporate": 336, "Hotel/B&B": 355, "General": 376 },
+// Flat fare per passenger count — the SAME for every customer type (Corporate,
+// Hotel/B&B, General) and every distance band up to 75 km. Market-test pricing
+// from the client (2026-10-02). Trips over 75 km still get a custom quote.
+const FLAT_FARES: Record<number, number> = {
+  1: 380,
+  2: 388,
+  3: 395,
 };
 
 export function getBand(distanceKm: number): PricingBand {
@@ -16,12 +17,11 @@ export function getBand(distanceKm: number): PricingBand {
   return "custom";
 }
 
-// Fare scales linearly with passengers: 1 pax = base, 2 pax = 2×, 3 pax = 3×, etc.
-export function getFare(band: PricingBand, passengers: number, tier: CustomerTier = "General"): number | null {
+// One flat price per passenger count; distance band and customer tier don't
+// change it (tier is still recorded for the booking). >75 km → custom quote.
+export function getFare(band: PricingBand, passengers: number, _tier: CustomerTier = "General"): number | null {
   if (band === "custom") return null;
-  const base = BASE_RATES[band][tier];
-  if (base == null) return null;
-  return base * passengers;
+  return FLAT_FARES[passengers] ?? FLAT_FARES[3];
 }
 
 // Surcharge added to the fare for trips on a Saturday or Sunday.
