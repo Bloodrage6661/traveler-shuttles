@@ -3,6 +3,7 @@
 :root {
   --background: #ffffff;
   --foreground: #1a1a1a;
+  --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
 }
 
 body {
@@ -16,4 +17,70 @@ body {
   height: 3px;
   background: #C9A84C;
   border-radius: 2px;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Motion system — route transition, scroll reveals, image reveals, hero words.
+   Resting state is always VISIBLE; animations only apply once <html> has the
+   `motion-ok` class (added by <MotionReady/> when JS runs). So content is never
+   hidden behind an animation that can't play.
+   ────────────────────────────────────────────────────────────────────────── */
+
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+.page-enter { animation: page-enter 0.4s var(--ease-out-expo) both; }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Generic rise/fade reveal */
+  html.motion-ok .rv {
+    opacity: 0;
+    transform: translateY(22px);
+    transition:
+      opacity 0.7s var(--ease-out-expo) calc(0.02s + var(--d, 0s)),
+      transform 0.8s var(--ease-out-expo) calc(0.02s + var(--d, 0s));
+    will-change: opacity, transform;
+  }
+  html.motion-ok .rv[data-in] { opacity: 1; transform: none; }
+
+  /* Image clip-path wipe + slow zoom */
+  html.motion-ok .rv.img-reveal {
+    transform: none;
+    opacity: 1;
+    clip-path: inset(0 0 100% 0);
+    transition: clip-path 1.15s var(--ease-out-expo) var(--d, 0s);
+  }
+  html.motion-ok .rv.img-reveal img {
+    transform: scale(1.12);
+    transition: transform 1.6s var(--ease-out-expo) var(--d, 0s);
+  }
+  html.motion-ok .rv.img-reveal[data-in] { clip-path: inset(0 0 0 0); }
+  html.motion-ok .rv.img-reveal[data-in] img { transform: scale(1); }
+
+  /* Hero word rise */
+  .wr-word { display: inline-block; overflow: hidden; vertical-align: top; }
+  .wr-inner {
+    display: inline-block;
+    transform: translateY(110%);
+    transition: transform 0.9s var(--ease-out-expo) var(--d, 0s);
+  }
+  .wr-inner[data-in] { transform: none; }
+}
+
+/* img-reveal frame is always a clean rounded, clipped box */
+.img-reveal { overflow: hidden; display: block; margin: 0; }
+.img-reveal img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+/* Journey deck progress dots (transform-only, no layout animation) */
+.jd-dot {
+  width: 9px; height: 9px; border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1);
+  transition: transform 0.35s var(--ease-out-expo), background 0.35s var(--ease-out-expo);
+}
+.jd-dot-on { background: #C9A84C; transform: scale(1.5); }
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter { animation: none !important; }
 }

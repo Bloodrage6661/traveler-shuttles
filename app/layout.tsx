@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { MessageCircle } from "lucide-react";
+import { SmoothScroll, MotionReady } from "@/components/motion";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -87,7 +88,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        {children}
+        <MotionReady />
+        <SmoothScroll>{children}</SmoothScroll>
 
         {/* WhatsApp floating button */}
         <a
