@@ -25,7 +25,7 @@ export const metadata: Metadata = {
 // branded shots anytime — just replace the URLs.
 const IMG = {
   capeTown: "https://images.unsplash.com/photo-1744604030401-b24c5975a574?auto=format&fit=crop&w=1920&q=70",
-  car: "https://images.unsplash.com/photo-1681164823899-2715b1eb3dad?auto=format&fit=crop&w=1400&q=72",
+  car: "/greg.jpg",
   vineyard: "https://images.unsplash.com/photo-1571113606406-f3ca1c36e7e7?auto=format&fit=crop&w=1400&q=72",
   airport: "https://images.unsplash.com/photo-1772991221654-49aa6e0a98bc?auto=format&fit=crop&w=1920&q=70",
 };
@@ -192,12 +192,12 @@ export default function HomePage() {
         <section id="fleet" className="py-20 sm:py-24 px-4 sm:px-6 lg:px-8 bg-[#F9F5EF] scroll-mt-24" aria-labelledby="why-heading">
           <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
             <div className="relative order-1 lg:order-none">
-              <RevealImage src={IMG.car} alt="Passenger relaxing in the back of a chauffeured car" className="rounded-3xl aspect-[4/3] shadow-xl" />
+              <RevealImage src={IMG.car} alt="Greg — owner and driver at Traveler Shuttles and Tours" className="rounded-3xl aspect-[4/3] shadow-xl" imgClassName="object-[center_28%]" />
               <div className="absolute bottom-4 left-4 flex items-center gap-2.5 bg-white/95 backdrop-blur rounded-2xl pl-3 pr-4 py-2.5 shadow-lg">
                 <span className="grid place-items-center w-9 h-9 rounded-xl bg-[#C9A84C]/15 text-[#C9A84C]"><Star size={16} fill="#C9A84C" aria-hidden="true" /></span>
                 <div className="leading-tight">
-                  <p className="text-sm font-bold text-slate-900">5.0 rating</p>
-                  <p className="text-[11px] text-slate-500">Trusted on Google</p>
+                  <p className="text-sm font-bold text-slate-900">Meet Greg</p>
+                  <p className="text-[11px] text-slate-500">Owner &amp; your driver · 5.0★</p>
                 </div>
               </div>
             </div>
