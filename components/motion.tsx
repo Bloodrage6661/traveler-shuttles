@@ -1,6 +1,6 @@
 "use client";
 
-import { createElement, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createElement, Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ReactLenis } from "lenis/react";
 
 const useIso = typeof window === "undefined" ? useEffect : useLayoutEffect;
@@ -121,12 +121,14 @@ export function WordRise({ text, className, step = 0.06 }: { text: string; class
   return (
     <span className={className}>
       {words.map((w, i) => (
-        <span key={i} className="wr-word">
-          <span className="wr-inner" data-in={on ? "" : undefined} style={{ "--d": `${i * step}s` } as React.CSSProperties}>
-            {w}
+        <Fragment key={i}>
+          <span className="wr-word">
+            <span className="wr-inner" data-in={on ? "" : undefined} style={{ "--d": `${i * step}s` } as React.CSSProperties}>
+              {w}
+            </span>
           </span>
           {i < words.length - 1 ? " " : ""}
-        </span>
+        </Fragment>
       ))}
     </span>
   );

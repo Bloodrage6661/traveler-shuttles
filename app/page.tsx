@@ -72,7 +72,7 @@ export default function HomePage() {
       <main>
         {/* ── Hero ── */}
         <section
-          className="relative min-h-[100svh] flex items-center pt-32 pb-16 px-4 sm:px-6 overflow-hidden"
+          className="relative min-h-[100svh] flex items-center pt-28 pb-12 px-4 sm:px-6 overflow-hidden"
           style={{ backgroundColor: "#0F2B1A" }}
           aria-labelledby="hero-heading"
         >
@@ -94,7 +94,8 @@ export default function HomePage() {
             backgroundSize: "64px 64px"
           }} aria-hidden="true" />
 
-          <div className="relative z-10 max-w-6xl mx-auto w-full grid lg:grid-cols-[1.1fr_0.9fr] gap-10 lg:gap-12 items-center">
+          <div className="relative z-10 w-full max-w-6xl mx-auto">
+            <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-10 lg:gap-12 items-center">
             {/* Left: headline */}
             <div>
               <div className="inline-flex items-center gap-2 bg-white/10 border border-white/15 text-white/80 text-xs font-semibold tracking-[0.15em] uppercase px-4 py-2 rounded-full mb-7">
@@ -149,9 +150,8 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Stats bar */}
-          <div className="absolute bottom-5 left-0 right-0 z-10 px-4 sm:px-6">
-            <div className="max-w-6xl mx-auto bg-white/8 border border-white/12 backdrop-blur-sm rounded-2xl p-4 sm:p-5 grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {/* Stats bar */}
+            <div className="mt-8 sm:mt-10 bg-white/8 border border-white/12 backdrop-blur-sm rounded-2xl p-4 sm:p-5 grid grid-cols-2 sm:grid-cols-4 gap-4">
               {stats.map(({ value, label }) => (
                 <div key={label} className="text-center">
                   <Counter value={value} className="text-xl sm:text-2xl font-bold text-[#C9A84C] tabular-nums" />
