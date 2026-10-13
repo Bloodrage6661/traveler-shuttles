@@ -6,6 +6,7 @@ import Script from "next/script";
 import { Phone, Mail, MessageCircle, MapPin, Clock, CheckCircle2, ArrowRight, Loader2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { Pane } from "@/components/motion";
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
@@ -90,7 +91,7 @@ export default function ContactPage() {
 
       <main id="main-content">
         {/* Hero */}
-        <section
+        <Pane fx="shutter"><section
           className="py-24 px-4 sm:px-6 text-center"
           style={{ background: "linear-gradient(160deg, #0F2B1A 0%, #1B4D2E 50%, #1B3A6B 100%)" }}
           aria-labelledby="contact-heading"
@@ -102,10 +103,10 @@ export default function ContactPage() {
               Questions, quotes, or corporate account enquiries — we respond within the hour during business hours.
             </p>
           </div>
-        </section>
+        </section></Pane>
 
         {/* Contact form + details */}
-        <section className="py-20 sm:py-24 px-4 sm:px-6 lg:px-8 bg-slate-50" aria-label="Contact form and details">
+        <Pane fx="wipe"><section className="py-20 sm:py-24 px-4 sm:px-6 lg:px-8 bg-slate-50" aria-label="Contact form and details">
           <div className="max-w-5xl mx-auto grid lg:grid-cols-[1fr_360px] gap-10">
 
             {/* Form */}
@@ -259,10 +260,10 @@ export default function ContactPage() {
               </div>
             </div>
           </div>
-        </section>
+        </section></Pane>
 
         {/* Book CTA */}
-        <section
+        <Pane fx="rise"><section
           className="py-16 px-4 sm:px-6 text-center"
           style={{ background: "linear-gradient(135deg, #1B4D2E, #1B3A6B)" }}
           aria-labelledby="contact-cta-heading"
@@ -272,7 +273,7 @@ export default function ContactPage() {
           <Link href="/book" className="inline-flex items-center gap-2 bg-[#C9A84C] hover:bg-[#D4B870] text-[#133820] font-bold px-8 py-4 rounded-full transition-colors">
             Book a Transfer <ArrowRight size={18} aria-hidden="true" />
           </Link>
-        </section>
+        </section></Pane>
       </main>
 
       <Footer />

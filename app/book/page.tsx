@@ -3,6 +3,7 @@ import { Plane, CheckCircle2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import BookingWizard from "@/components/BookingWizard";
+import { Pane } from "@/components/motion";
 
 export const metadata: Metadata = {
   title: "Book a Transfer — Cape Town Airport Shuttle",
@@ -29,7 +30,7 @@ export default function BookPage() {
 
       <main id="main-content">
         {/* Hero strip */}
-        <section
+        <Pane fx="shutter"><section
           className="py-20 px-4 sm:px-6 text-center"
           style={{ background: "linear-gradient(160deg, #0F2B1A 0%, #1B4D2E 50%, #1B3A6B 100%)" }}
           aria-label="Book a transfer"
@@ -51,12 +52,12 @@ export default function BookPage() {
               ))}
             </div>
           </div>
-        </section>
+        </section></Pane>
 
         {/* Booking wizard */}
-        <section className="bg-slate-50 pb-20" aria-label="Booking form">
+        <Pane fx="wipe"><section className="bg-slate-50 pb-20" aria-label="Booking form">
           <BookingWizard />
-        </section>
+        </section></Pane>
       </main>
 
       <Footer />

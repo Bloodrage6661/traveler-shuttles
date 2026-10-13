@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Clock, Shield, Star, CheckCircle2, ArrowRight, Plane, Users, MapPin, Phone } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { Pane } from "@/components/motion";
 
 export const metadata: Metadata = {
   title: "About Us — Cape Town Shuttle & Transfer Service",
@@ -37,7 +38,7 @@ export default function AboutPage() {
 
       <main id="main-content">
         {/* Hero */}
-        <section
+        <Pane fx="shutter"><section
           className="py-24 px-4 sm:px-6 text-center"
           style={{ background: "linear-gradient(160deg, #0F2B1A 0%, #1B4D2E 50%, #1B3A6B 100%)" }}
           aria-labelledby="about-heading"
@@ -51,10 +52,10 @@ export default function AboutPage() {
               A Cape Town shuttle service built on three principles — reliability, transparency, and professionalism.
             </p>
           </div>
-        </section>
+        </section></Pane>
 
         {/* Story */}
-        <section className="py-20 sm:py-24 px-4 sm:px-6 lg:px-8 bg-white" aria-labelledby="story-heading">
+        <Pane fx="wipe"><section className="py-20 sm:py-24 px-4 sm:px-6 lg:px-8 bg-white" aria-labelledby="story-heading">
           <div className="max-w-5xl mx-auto grid lg:grid-cols-2 gap-14 items-center">
             <div>
               <p className="text-[#C9A84C] text-xs font-semibold tracking-[0.2em] uppercase mb-3">Our Story</p>
@@ -91,10 +92,10 @@ export default function AboutPage() {
               </div>
             </div>
           </div>
-        </section>
+        </section></Pane>
 
         {/* Mission */}
-        <section className="py-20 sm:py-24 px-4 sm:px-6 lg:px-8 bg-[#F9F5EF]" aria-labelledby="mission-heading">
+        <Pane fx="rise"><section className="py-20 sm:py-24 px-4 sm:px-6 lg:px-8 bg-[#F9F5EF]" aria-labelledby="mission-heading">
           <div className="max-w-3xl mx-auto text-center">
             <p className="text-[#C9A84C] text-xs font-semibold tracking-[0.2em] uppercase mb-3">Our Mission</p>
             <h2 id="mission-heading" className="text-3xl font-bold text-slate-900 mb-4">Why we do what we do</h2>
@@ -104,10 +105,10 @@ export default function AboutPage() {
               visitor to a regular corporate client — the confidence that they will arrive on time, in comfort, and without surprises.&rdquo;
             </blockquote>
           </div>
-        </section>
+        </section></Pane>
 
         {/* Values */}
-        <section className="py-20 sm:py-24 px-4 sm:px-6 lg:px-8 bg-white" aria-labelledby="values-heading">
+        <Pane fx="split"><section className="py-20 sm:py-24 px-4 sm:px-6 lg:px-8 bg-white" aria-labelledby="values-heading">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-14">
               <p className="text-[#C9A84C] text-xs font-semibold tracking-[0.2em] uppercase mb-3">What We Stand For</p>
@@ -126,10 +127,10 @@ export default function AboutPage() {
               ))}
             </div>
           </div>
-        </section>
+        </section></Pane>
 
         {/* Why choose us */}
-        <section className="py-20 sm:py-24 px-4 sm:px-6 lg:px-8 bg-[#F9F5EF]" aria-labelledby="why-heading">
+        <Pane fx="iris"><section className="py-20 sm:py-24 px-4 sm:px-6 lg:px-8 bg-[#F9F5EF]" aria-labelledby="why-heading">
           <div className="max-w-5xl mx-auto grid lg:grid-cols-2 gap-14 items-center">
             <div>
               <p className="text-[#C9A84C] text-xs font-semibold tracking-[0.2em] uppercase mb-3">Why Us</p>
@@ -160,10 +161,10 @@ export default function AboutPage() {
               ))}
             </div>
           </div>
-        </section>
+        </section></Pane>
 
         {/* CTA */}
-        <section
+        <Pane fx="diagonal"><section
           className="py-20 px-4 sm:px-6 text-center"
           style={{ background: "linear-gradient(135deg, #1B4D2E, #1B3A6B)" }}
           aria-labelledby="about-cta-heading"
@@ -178,7 +179,7 @@ export default function AboutPage() {
               Get in Touch
             </Link>
           </div>
-        </section>
+        </section></Pane>
       </main>
 
       <Footer />

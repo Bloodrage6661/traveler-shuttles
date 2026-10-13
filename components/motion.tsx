@@ -26,21 +26,29 @@ export function MotionReady() {
   return null;
 }
 
-/** Fires once when the element scrolls into view. */
-function useInViewOnce<T extends HTMLElement>() {
+/**
+ * Fires once when the element's top scrolls into view (or is already above it).
+ * A plain scroll-position check rather than IntersectionObserver: it can't
+ * silently miss, so content is never left hidden. `early` fires as soon as the
+ * element peeks in.
+ */
+function useInViewOnce<T extends HTMLElement>(early = false) {
   const ref = useRef<T>(null);
   const [seen, setSeen] = useState(false);
   useEffect(() => {
-    const el = ref.current;
-    if (!el || seen) return;
-    if (!("IntersectionObserver" in window)) { setSeen(true); return; }
-    const io = new IntersectionObserver(
-      (entries) => { if (entries.some((e) => e.isIntersecting)) { setSeen(true); io.disconnect(); } },
-      { rootMargin: "0px 0px -10% 0px", threshold: 0.08 },
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, [seen]);
+    if (seen) return;
+    const check = () => {
+      const el = ref.current;
+      if (el && el.getBoundingClientRect().top < window.innerHeight * (early ? 0.96 : 0.9)) setSeen(true);
+    };
+    check();
+    window.addEventListener("scroll", check, { passive: true });
+    window.addEventListener("resize", check);
+    return () => {
+      window.removeEventListener("scroll", check);
+      window.removeEventListener("resize", check);
+    };
+  }, [seen, early]);
   return [ref, seen] as const;
 }
 
@@ -61,6 +69,19 @@ export function Reveal({
     },
     children,
   );
+}
+
+export type PaneFx = "rise" | "wipe" | "iris" | "split" | "zoom" | "diagonal" | "shutter";
+
+/**
+ * A whole section that arrives with its own pane transition when scrolled to.
+ * The wrapper itself is never clipped (a fully clipped box never intersects),
+ * the effect is applied to the section inside it.
+ */
+export function Pane({ fx, children }: { fx: PaneFx; children: React.ReactNode }) {
+  // Start as soon as the section peeks in, so there is never a blank gap.
+  const [ref, seen] = useInViewOnce<HTMLDivElement>(true);
+  return <div ref={ref} className="pane" data-fx={fx} data-in={seen ? "" : undefined}>{children}</div>;
 }
 
 /** A photo that reveals with a clip-path wipe + slow zoom when scrolled into view. */

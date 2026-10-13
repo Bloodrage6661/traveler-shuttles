@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import Link from "next/link";
+import { Reveal } from "@/components/motion";
 import { PencilLine, ShieldCheck, Plane, ArrowRight } from "lucide-react";
 
 type Panel = {
@@ -107,14 +108,15 @@ export default function JourneyDeck() {
       </div>
 
       {/* Mobile: clean stacked cards */}
-      <div className="lg:hidden px-4 sm:px-6 py-16 bg-[#0F2B1A]">
+      <div className="lg:hidden px-4 sm:px-6 py-16 bg-[#0F2B1A] overflow-x-clip">
         <div className="flex items-center gap-2 mb-8 justify-center">
           <span className="w-8 h-0.5 bg-[#C9A84C] rounded" aria-hidden="true" />
           <span className="text-white/80 text-xs font-semibold tracking-[0.2em] uppercase">Your Journey with Traveler</span>
         </div>
         <div className="space-y-4 max-w-md mx-auto">
-          {panels.map(({ n, tag, title, copy, icon: Icon, grad }) => (
-            <div key={n} className="relative rounded-2xl p-6 overflow-hidden" style={{ background: grad }}>
+          {panels.map(({ n, tag, title, copy, icon: Icon, grad }, i) => (
+            <Reveal key={n} className={i % 2 ? "rv-r" : "rv-l"}>
+            <div className="relative rounded-2xl p-6 overflow-hidden" style={{ background: grad }}>
               <span aria-hidden="true" className="pointer-events-none absolute right-2 -bottom-3 font-bold leading-none text-white/[0.07]" style={{ fontSize: "7rem" }}>{n}</span>
               <div className="relative z-10">
                 <div className="flex items-center gap-3 mb-3">
@@ -125,6 +127,7 @@ export default function JourneyDeck() {
                 <p className="text-white/70 text-sm leading-relaxed">{copy}</p>
               </div>
             </div>
+            </Reveal>
           ))}
           <Link href="/book" className="w-full inline-flex items-center justify-center gap-2 mt-2 bg-[#C9A84C] hover:bg-[#D4B870] text-[#133820] font-bold px-7 py-3.5 rounded-full transition-colors">
             Book a Transfer <ArrowRight size={17} aria-hidden="true" />

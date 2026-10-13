@@ -16,6 +16,7 @@ type Service = {
 };
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { Pane } from "@/components/motion";
 
 export const metadata: Metadata = {
   title: "Shuttle Services — Airport, Corporate & Private Transfers",
@@ -84,7 +85,7 @@ export default function ServicesPage() {
 
       <main id="main-content">
         {/* Hero */}
-        <section
+        <Pane fx="shutter"><section
           className="py-24 px-4 sm:px-6 text-center"
           style={{ background: "linear-gradient(160deg, #0F2B1A 0%, #1B4D2E 50%, #1B3A6B 100%)" }}
           aria-labelledby="services-hero-heading"
@@ -98,14 +99,13 @@ export default function ServicesPage() {
               From solo airport runs to full corporate fleets — professional transfers tailored to individuals, businesses, and hospitality partners.
             </p>
           </div>
-        </section>
+        </section></Pane>
 
         {/* Services list */}
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="flex flex-col gap-16">
             {services.map(({ icon: Icon, title, subtitle, desc, detail, tiers, points, color, byRequest }, idx) => (
-              <section
-                key={title}
+              <Pane key={title} fx={idx % 2 ? "rise" : "wipe"}><section
                 className="grid lg:grid-cols-[1fr_340px] gap-10 items-start"
                 aria-labelledby={`service-${idx}`}
               >
@@ -154,13 +154,13 @@ export default function ServicesPage() {
                 {idx < services.length - 1 && (
                   <div className="lg:col-span-2 border-b border-slate-100" aria-hidden="true" />
                 )}
-              </section>
+              </section></Pane>
             ))}
           </div>
         </div>
 
         {/* CTA */}
-        <section
+        <Pane fx="rise"><section
           className="py-20 px-4 sm:px-6 text-center"
           style={{ background: "linear-gradient(135deg, #1B4D2E, #1B3A6B)" }}
           aria-labelledby="services-cta-heading"
@@ -170,7 +170,7 @@ export default function ServicesPage() {
           <Link href="/book" className="inline-flex items-center gap-2 bg-[#C9A84C] hover:bg-[#D4B870] text-[#133820] font-bold px-8 py-4 rounded-full transition-colors">
             Book a Transfer <ArrowRight size={18} aria-hidden="true" />
           </Link>
-        </section>
+        </section></Pane>
       </main>
 
       <Footer />

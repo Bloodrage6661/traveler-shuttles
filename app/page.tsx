@@ -8,7 +8,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PricingGate from "@/components/PricingGate";
 import JourneyDeck from "@/components/JourneyDeck";
-import { Reveal, RevealImage, Counter, WordRise } from "@/components/motion";
+import { Reveal, RevealImage, Counter, WordRise, Pane } from "@/components/motion";
 
 export const metadata: Metadata = {
   title: { absolute: "Traveler Shuttles and Tours | Cape Town Airport Transfers & Shuttle Service" },
@@ -87,7 +87,7 @@ export default function HomePage() {
           <img
             src={IMG.capeTown}
             alt="Cape Town with Table Mountain and the coastline"
-            className="absolute inset-0 w-full h-full object-cover object-[center_42%]"
+            className="hero-zoom absolute inset-0 w-full h-full object-cover object-[center_42%]"
             fetchPriority="high"
           />
           <div className="absolute inset-0" aria-hidden="true" style={{
@@ -126,7 +126,7 @@ export default function HomePage() {
             </div>
 
             {/* Right: Book-a-trip card */}
-            <div className="bg-white rounded-3xl shadow-2xl shadow-black/30 p-6 sm:p-7 border border-white/40">
+            <div className="hero-card bg-white rounded-3xl shadow-2xl shadow-black/30 p-6 sm:p-7 border border-white/40">
               <div className="flex items-center gap-2 mb-1">
                 <span className="grid place-items-center w-9 h-9 rounded-xl bg-[#1B4D2E]/10 text-[#1B4D2E]"><Car size={18} aria-hidden="true" /></span>
                 <h2 className="font-bold text-slate-900 text-lg">Book your transfer</h2>
@@ -158,7 +158,7 @@ export default function HomePage() {
           </div>
 
             {/* Stats bar */}
-            <div className="mt-8 sm:mt-10 bg-white/8 border border-white/12 backdrop-blur-sm rounded-2xl p-4 sm:p-5 grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="hero-stats mt-8 sm:mt-10 bg-white/8 border border-white/12 backdrop-blur-sm rounded-2xl p-4 sm:p-5 grid grid-cols-2 sm:grid-cols-4 gap-4">
               {stats.map(({ value, label }) => (
                 <div key={label} className="text-center">
                   <Counter value={value} className="text-xl sm:text-2xl font-bold text-[#C9A84C] tabular-nums" />
@@ -170,6 +170,7 @@ export default function HomePage() {
         </section>
 
         {/* ── Services ── */}
+        <Pane fx="rise">
         <section id="services" className="py-20 sm:py-24 px-4 sm:px-6 lg:px-8 bg-white" aria-labelledby="services-heading">
           <div className="max-w-6xl mx-auto">
             <Reveal className="text-center mb-14">
@@ -194,8 +195,10 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+        </Pane>
 
         {/* ── Why travel with us (image split) ── */}
+        <Pane fx="wipe">
         <section id="fleet" className="py-20 sm:py-24 px-4 sm:px-6 lg:px-8 bg-[#F9F5EF] scroll-mt-24" aria-labelledby="why-heading">
           <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
             <div className="relative">
@@ -228,11 +231,13 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+        </Pane>
 
         {/* ── Journey (pinned pane deck) ── */}
-        <JourneyDeck />
+        <Pane fx="shutter"><JourneyDeck /></Pane>
 
         {/* ── Winelands & tours (image split) ── */}
+        <Pane fx="iris">
         <section className="py-20 sm:py-24 px-4 sm:px-6 lg:px-8 bg-[#F9F5EF]" aria-labelledby="tours-heading">
           <div className="max-w-6xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
@@ -266,11 +271,13 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+        </Pane>
 
         {/* ── Pricing gate ── */}
-        <PricingGate />
+        <Pane fx="split"><PricingGate /></Pane>
 
         {/* ── Testimonials ── */}
+        <Pane fx="zoom">
         <section id="testimonials" className="py-20 sm:py-24 px-4 sm:px-6 lg:px-8 bg-white" aria-labelledby="testimonials-heading">
           <div className="max-w-6xl mx-auto">
             <Reveal className="text-center mb-14">
@@ -315,8 +322,10 @@ export default function HomePage() {
             </Reveal>
           </div>
         </section>
+        </Pane>
 
         {/* ── Coverage ── */}
+        <Pane fx="diagonal">
         <section className="py-20 sm:py-24 px-4 sm:px-6 lg:px-8 bg-[#F9F5EF]" aria-labelledby="coverage-heading">
           <div className="max-w-6xl mx-auto">
             <Reveal className="text-center mb-14">
@@ -346,8 +355,10 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+        </Pane>
 
         {/* ── Final CTA (airport image) ── */}
+        <Pane fx="shutter">
         <section className="relative py-24 sm:py-28 px-4 sm:px-6 lg:px-8 overflow-hidden" aria-labelledby="cta-heading">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={IMG.airport} alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover object-center" loading="lazy" />
@@ -372,6 +383,7 @@ export default function HomePage() {
             </Reveal>
           </div>
         </section>
+        </Pane>
       </main>
 
       <Footer />

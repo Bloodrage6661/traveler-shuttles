@@ -53,6 +53,37 @@ body {
   }
   html.motion-ok .rv.img-reveal[data-in] img { transform: scale(1); }
 
+  /* Section panes — each section arrives with its own transition */
+  html.motion-ok .pane > * {
+    transition:
+      clip-path 1.15s cubic-bezier(0.77, 0, 0.18, 1),
+      transform 1.15s cubic-bezier(0.77, 0, 0.18, 1),
+      opacity 0.9s ease;
+  }
+  html.motion-ok .pane[data-fx="rise"] > *     { clip-path: inset(100% 0 0 0); transform: translateY(60px); }
+  html.motion-ok .pane[data-fx="shutter"] > *  { clip-path: inset(0 0 100% 0); }
+  html.motion-ok .pane[data-fx="wipe"] > *     { clip-path: inset(0 100% 0 0); }
+  html.motion-ok .pane[data-fx="split"] > *    { clip-path: inset(0 50% 0 50%); }
+  html.motion-ok .pane[data-fx="iris"] > *     { clip-path: circle(0% at 50% 35%); }
+  html.motion-ok .pane[data-fx="diagonal"] > * { clip-path: polygon(0 0, 0 0, 0 0, 0 0); }
+  html.motion-ok .pane[data-fx="zoom"] > *     { transform: scale(0.92); opacity: 0; }
+  html.motion-ok .pane[data-in] > *                     { clip-path: inset(0 0 0 0); transform: none; opacity: 1; }
+  html.motion-ok .pane[data-in][data-fx="iris"] > *     { clip-path: circle(150% at 50% 35%); }
+  html.motion-ok .pane[data-in][data-fx="diagonal"] > * { clip-path: polygon(0 0, 220% 0, 0 220%, 0 0); }
+
+  /* Sideways variants of the rise reveal (mobile journey cards) */
+  html.motion-ok .rv.rv-l { transform: translateX(-48px); }
+  html.motion-ok .rv.rv-r { transform: translateX(48px); }
+  html.motion-ok .rv.rv-l[data-in], html.motion-ok .rv.rv-r[data-in] { transform: none; }
+
+  /* Hero: slow drift on the photo, booking card and stats slide into place */
+  @keyframes hero-zoom  { from { transform: scale(1.14); } to { transform: scale(1); } }
+  @keyframes hero-card  { from { opacity: 0; transform: translateX(60px); } }
+  @keyframes hero-stats { from { opacity: 0; transform: translateY(40px); } }
+  .hero-zoom  { animation: hero-zoom 7s var(--ease-out-expo) both; }
+  .hero-card  { animation: hero-card 0.9s var(--ease-out-expo) 0.25s both; }
+  .hero-stats { animation: hero-stats 0.9s var(--ease-out-expo) 0.45s both; }
+
   /* Hero word rise */
   .wr-word { display: inline-block; overflow: hidden; vertical-align: top; }
   .wr-inner {
