@@ -62,6 +62,13 @@ const stats = [
   { value: "24/7", label: "Service availability" },
 ];
 
+const winelands = [
+  { id: "1489676138048-ba1786a7f026", alt: "Vineyard rows beneath the Cape Winelands mountains" },
+  { id: "1551035929-2e3203e0991b", alt: "White farmhouse and oak tree on a Franschhoek wine farm" },
+  { id: "1560162315-0a6793e72d75", alt: "White wine being poured at a Cape wine tasting" },
+  { id: "1640235922705-37c4eefe2327", alt: "Cape Dutch manor house with mountains behind" },
+];
+
 const tripTypes = ["To Airport", "From Airport", "Point-to-point"];
 
 export default function HomePage() {
@@ -191,7 +198,7 @@ export default function HomePage() {
         {/* ── Why travel with us (image split) ── */}
         <section id="fleet" className="py-20 sm:py-24 px-4 sm:px-6 lg:px-8 bg-[#F9F5EF] scroll-mt-24" aria-labelledby="why-heading">
           <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
-            <div className="relative order-1 lg:order-none">
+            <div className="relative">
               <RevealImage src={IMG.car} alt="Greg — owner and driver at Traveler Shuttles and Tours" className="rounded-3xl aspect-[4/3] shadow-xl" imgClassName="object-[center_28%]" />
               <div className="absolute bottom-4 left-4 flex items-center gap-2.5 bg-white/95 backdrop-blur rounded-2xl pl-3 pr-4 py-2.5 shadow-lg">
                 <span className="grid place-items-center w-9 h-9 rounded-xl bg-[#C9A84C]/15 text-[#C9A84C]"><Star size={16} fill="#C9A84C" aria-hidden="true" /></span>
@@ -227,7 +234,8 @@ export default function HomePage() {
 
         {/* ── Winelands & tours (image split) ── */}
         <section className="py-20 sm:py-24 px-4 sm:px-6 lg:px-8 bg-[#F9F5EF]" aria-labelledby="tours-heading">
-          <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+          <div className="max-w-6xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
             <div>
               <Reveal>
                 <p className="text-[#C9A84C] text-xs font-semibold tracking-[0.2em] uppercase mb-3 flex items-center gap-2"><Grape size={14} aria-hidden="true" /> Beyond the Airport</p>
@@ -249,6 +257,12 @@ export default function HomePage() {
                 <Grape size={14} className="text-[#C9A84C]" aria-hidden="true" />
                 <span className="text-xs font-semibold">Stellenbosch · Franschhoek · Constantia</span>
               </div>
+            </div>
+          </div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-10">
+              {winelands.map(({ id, alt }, i) => (
+                <RevealImage key={id} src={`https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=800&q=70`} alt={alt} className="rounded-2xl aspect-[4/3] shadow-md" delay={i * 0.06} />
+              ))}
             </div>
           </div>
         </section>

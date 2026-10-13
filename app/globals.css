@@ -44,18 +44,13 @@ body {
   }
   html.motion-ok .rv[data-in] { opacity: 1; transform: none; }
 
-  /* Image clip-path wipe + slow zoom */
-  html.motion-ok .rv.img-reveal {
-    transform: none;
-    opacity: 1;
-    clip-path: inset(0 0 100% 0);
-    transition: clip-path 1.15s var(--ease-out-expo) var(--d, 0s);
-  }
+  /* Image: fades/rises with .rv, plus a slow zoom. (No clip-path: a fully
+     clipped box never intersects, so the reveal and lazy-load never fired.) */
+  html.motion-ok .rv.img-reveal { opacity: 1; transform: none; } /* photos are never hidden */
   html.motion-ok .rv.img-reveal img {
     transform: scale(1.12);
     transition: transform 1.6s var(--ease-out-expo) var(--d, 0s);
   }
-  html.motion-ok .rv.img-reveal[data-in] { clip-path: inset(0 0 0 0); }
   html.motion-ok .rv.img-reveal[data-in] img { transform: scale(1); }
 
   /* Hero word rise */
@@ -80,6 +75,18 @@ body {
   transition: transform 0.35s var(--ease-out-expo), background 0.35s var(--ease-out-expo);
 }
 .jd-dot-on { background: #C9A84C; transform: scale(1.5); }
+
+/* Booking wizard panes — each enters from its own side */
+@keyframes bw-left  { from { opacity: 0; transform: translateX(-100%); } }
+@keyframes bw-top   { from { opacity: 0; transform: translateY(-60%); } }
+@keyframes bw-right { from { opacity: 0; transform: translateX(100%); } }
+@keyframes bw-up    { from { opacity: 0; transform: translateY(60%); } }
+@media (prefers-reduced-motion: no-preference) {
+  .bw-left  { animation: bw-left  0.55s var(--ease-out-expo) both; }
+  .bw-top   { animation: bw-top   0.55s var(--ease-out-expo) both; }
+  .bw-right { animation: bw-right 0.55s var(--ease-out-expo) both; }
+  .bw-up    { animation: bw-up    0.6s  var(--ease-out-expo) both; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .page-enter { animation: none !important; }
