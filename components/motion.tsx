@@ -26,20 +26,27 @@ export function MotionReady() {
   return null;
 }
 
+type View = "below" | "in" | "above";
+
 /**
- * Fires once when the element's top scrolls into view (or is already above it).
- * A plain scroll-position check rather than IntersectionObserver: it can't
- * silently miss, so content is never left hidden. `early` fires as soon as the
- * element peeks in.
+ * Tracks whether the element is on screen, or off it below / above. Goes back
+ * to "below"/"above" once fully off screen, so the entrance replays whichever
+ * direction you scroll back from. A plain scroll-position check rather than
+ * IntersectionObserver: it can't silently miss, so content is never left hidden.
+ * `early` fires as soon as the element peeks in.
  */
-function useInViewOnce<T extends HTMLElement>(early = false) {
+function useInView<T extends HTMLElement>(early = false) {
   const ref = useRef<T>(null);
-  const [seen, setSeen] = useState(false);
+  const [view, setView] = useState<View>("below");
   useEffect(() => {
-    if (seen) return;
+    const edge = early ? 0.96 : 0.9;
     const check = () => {
       const el = ref.current;
-      if (el && el.getBoundingClientRect().top < window.innerHeight * (early ? 0.96 : 0.9)) setSeen(true);
+      if (!el) return;
+      const r = el.getBoundingClientRect(), vh = window.innerHeight;
+      if (r.bottom < 0) setView("above");
+      else if (r.top > vh) setView("below");
+      else if (r.top < vh * edge && r.bottom > vh * (1 - edge)) setView("in");
     };
     check();
     window.addEventListener("scroll", check, { passive: true });
@@ -48,9 +55,12 @@ function useInViewOnce<T extends HTMLElement>(early = false) {
       window.removeEventListener("scroll", check);
       window.removeEventListener("resize", check);
     };
-  }, [seen, early]);
-  return [ref, seen] as const;
+  }, [early]);
+  return [ref, view] as const;
 }
+
+/** data-in when on screen; data-above while waiting off the top of the screen. */
+const viewAttrs = (v: View) => ({ "data-in": v === "in" ? "" : undefined, "data-above": v === "above" ? "" : undefined });
 
 type Tag = "div" | "section" | "li" | "p" | "span" | "h2" | "figure";
 
@@ -58,13 +68,13 @@ type Tag = "div" | "section" | "li" | "p" | "span" | "h2" | "figure";
 export function Reveal({
   as = "div", delay = 0, className, children,
 }: { as?: Tag; delay?: number; className?: string; children: React.ReactNode }) {
-  const [ref, seen] = useInViewOnce<HTMLElement>();
+  const [ref, view] = useInView<HTMLElement>();
   return createElement(
     as,
     {
       ref,
       className: `rv${className ? " " + className : ""}`,
-      "data-in": seen ? "" : undefined,
+      ...viewAttrs(view),
       style: delay ? ({ "--d": `${delay}s` } as React.CSSProperties) : undefined,
     },
     children,
@@ -80,15 +90,16 @@ export type PaneFx = "rise" | "wipe" | "iris" | "split" | "zoom" | "diagonal" | 
  */
 export function Pane({ fx, children }: { fx: PaneFx; children: React.ReactNode }) {
   // Start as soon as the section peeks in, so there is never a blank gap.
-  const [ref, seen] = useInViewOnce<HTMLDivElement>(true);
-  return <div ref={ref} className="pane" data-fx={fx} data-in={seen ? "" : undefined}>{children}</div>;
+  const [ref, view] = useInView<HTMLDivElement>(true);
+  return <div ref={ref} className="pane" data-fx={fx} {...viewAttrs(view)}>{children}</div>;
 }
 
 /** A photo that reveals with a clip-path wipe + slow zoom when scrolled into view. */
 export function RevealImage({
   src, alt, className, imgClassName, delay = 0,
 }: { src: string; alt: string; className?: string; imgClassName?: string; delay?: number }) {
-  const [ref, seen] = useInViewOnce<HTMLElement>();
+  const [ref, view] = useInView<HTMLElement>();
+  const seen = view === "in";
   return (
     <figure
       ref={ref as React.Ref<HTMLElement>}
@@ -104,7 +115,8 @@ export function RevealImage({
 
 /** Counts up to the number in `value` when scrolled into view, keeping any suffix (e.g. "500+", "5★"). */
 export function Counter({ value, className }: { value: string; className?: string }) {
-  const [ref, seen] = useInViewOnce<HTMLSpanElement>();
+  const [ref, view] = useInView<HTMLSpanElement>();
+  const seen = view === "in";
   // Only count values that are a single number + non-digit suffix ("500+",
   // "5★", "3"). Leave things like "24/7" static.
   const m = /^(\d+)([^\d]*)$/.exec(value.trim());

@@ -42,6 +42,8 @@ body {
       transform 0.8s var(--ease-out-expo) calc(0.02s + var(--d, 0s));
     will-change: opacity, transform;
   }
+  /* waiting off the top of the screen: comes down into place when you scroll back up */
+  html.motion-ok .rv[data-above] { transform: translateY(-22px); }
   html.motion-ok .rv[data-in] { opacity: 1; transform: none; }
 
   /* Image: fades/rises with .rv, plus a slow zoom. (No clip-path: a fully
@@ -67,6 +69,9 @@ body {
   html.motion-ok .pane[data-fx="iris"] > *     { clip-path: circle(0% at 50% 35%); }
   html.motion-ok .pane[data-fx="diagonal"] > * { clip-path: polygon(0 0, 0 0, 0 0, 0 0); }
   html.motion-ok .pane[data-fx="zoom"] > *     { transform: scale(0.92); opacity: 0; }
+  /* scrolling back up: vertical entrances arrive from the top instead */
+  html.motion-ok .pane[data-above][data-fx="rise"] > *    { clip-path: inset(0 0 100% 0); transform: translateY(-60px); }
+  html.motion-ok .pane[data-above][data-fx="shutter"] > * { clip-path: inset(100% 0 0 0); }
   html.motion-ok .pane[data-in] > *                     { clip-path: inset(0 0 0 0); transform: none; opacity: 1; }
   html.motion-ok .pane[data-in][data-fx="iris"] > *     { clip-path: circle(150% at 50% 35%); }
   html.motion-ok .pane[data-in][data-fx="diagonal"] > * { clip-path: polygon(0 0, 220% 0, 0 220%, 0 0); }
