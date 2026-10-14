@@ -30,8 +30,8 @@ export default function Footer() {
               <a href="tel:+27766432418" className="inline-flex items-center gap-2 text-sm text-white/70 hover:text-[#C9A84C] transition-colors">
                 <Phone size={15} /> 076 643 2418
               </a>
-              <a href="mailto:info@travelershuttles.co.za" className="inline-flex items-center gap-2 text-sm text-white/70 hover:text-[#C9A84C] transition-colors">
-                <Mail size={15} /> info@travelershuttles.co.za
+              <a href="mailto:traveler@unicape.co.za" className="inline-flex items-center gap-2 text-sm text-white/70 hover:text-[#C9A84C] transition-colors">
+                <Mail size={15} /> traveler@unicape.co.za
               </a>
             </div>
           </div>
