@@ -251,8 +251,8 @@ export default function HomePage() {
                     <li key={t} className="flex items-center gap-2 text-sm text-slate-600"><CheckCircle2 size={15} className="text-[#1B4D2E] shrink-0" aria-hidden="true" /> {t}</li>
                   ))}
                 </ul>
-                <Link href="/contact" className="inline-flex items-center gap-2 bg-[#1B4D2E] hover:bg-[#246038] text-white font-bold px-6 py-3 rounded-full transition-colors text-sm">
-                  Ask about a tour <ArrowRight size={16} aria-hidden="true" />
+                <Link href="/tours" className="inline-flex items-center gap-2 bg-[#1B4D2E] hover:bg-[#246038] text-white font-bold px-6 py-3 rounded-full transition-colors text-sm">
+                  Build your tour <ArrowRight size={16} aria-hidden="true" />
                 </Link>
               </Reveal>
             </div>
