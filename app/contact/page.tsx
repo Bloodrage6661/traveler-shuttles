@@ -217,7 +217,7 @@ export default function ContactPage() {
 
               {/* Email */}
               <a
-                href="mailto:info@travelershuttles.co.za"
+                href="mailto:traveler@unicape.co.za"
                 className="flex items-center gap-4 bg-white border border-slate-100 shadow-sm rounded-2xl p-5 hover:shadow-md hover:border-[#C9A84C]/40 transition-all"
                 aria-label="Email us"
               >
@@ -225,7 +225,7 @@ export default function ContactPage() {
                   <Mail size={20} aria-hidden="true" />
                 </div>
                 <div>
-                  <p className="font-semibold text-slate-900">info@travelershuttles.co.za</p>
+                  <p className="font-semibold text-slate-900">traveler@unicape.co.za</p>
                   <p className="text-slate-400 text-sm">We reply within 1 hour</p>
                 </div>
               </a>
