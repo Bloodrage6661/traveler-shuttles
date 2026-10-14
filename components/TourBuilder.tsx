@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Script from "next/script";
 import { Check, Plus, Clock, Users, Car, Loader2, CheckCircle2, ArrowRight, X } from "lucide-react";
-import { TOURS, BAND_LABELS, bandFor, VEHICLES, vehicleFor, AFTER_HOURS_PER_HOUR, DEPOSIT_PER_PERSON } from "@/lib/tours";
+import { TOURS, BAND_LABELS, bandFor, VEHICLES, vehicleFor, AFTER_HOURS_PER_HOUR, DEPOSIT_PER_PERSON, HIRE_IMG, tourImg } from "@/lib/tours";
 import { Reveal } from "@/components/motion";
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
@@ -114,7 +114,9 @@ export default function TourBuilder() {
           {TOURS.map((t, i) => {
             const on = picked.includes(t.n);
             return (
-              <Reveal key={t.n} delay={(i % 2) * 0.06} className={`rounded-2xl border bg-white p-5 flex flex-col transition-shadow ${on ? "border-[#1B4D2E] ring-2 ring-[#1B4D2E]/20 shadow-md" : "border-slate-100 shadow-sm hover:shadow-md"}`}>
+              <Reveal key={t.n} delay={(i % 2) * 0.06} className={`rounded-2xl border bg-white p-5 pt-0 overflow-hidden flex flex-col transition-shadow ${on ? "border-[#1B4D2E] ring-2 ring-[#1B4D2E]/20 shadow-md" : "border-slate-100 shadow-sm hover:shadow-md"}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={tourImg(t.img)} alt={t.title} loading="lazy" className="-mx-5 mb-4 h-40 w-[calc(100%+2.5rem)] max-w-none object-cover" />
                 <div className="flex items-start gap-3 mb-3">
                   <span className="grid place-items-center shrink-0 w-9 h-9 rounded-lg bg-[#1B4D2E] text-white text-xs font-bold">{t.n}</span>
                   <div>
@@ -144,7 +146,7 @@ export default function TourBuilder() {
 
           {/* Create your own itinerary */}
           <Reveal className="sm:col-span-2">
-            <div className={`rounded-2xl p-6 text-white ${picked.includes(OWN) ? "ring-4 ring-[#C9A84C]/50" : ""}`} style={{ background: "linear-gradient(135deg, #0F2B1A 0%, #1B4D2E 55%, #1B3A6B 100%)" }}>
+            <div className={`rounded-2xl p-6 text-white ${picked.includes(OWN) ? "ring-4 ring-[#C9A84C]/50" : ""}`} style={{ background: `linear-gradient(135deg, rgba(15,43,26,0.94) 0%, rgba(27,77,46,0.86) 55%, rgba(27,58,107,0.9) 100%), url(${tourImg(HIRE_IMG, 1400)}) center/cover` }}>
               <p className="text-[#C9A84C] text-xs font-semibold tracking-[0.2em] uppercase mb-2 flex items-center gap-2"><Car size={14} /> Vehicle &amp; guide hire</p>
               <h3 className="text-xl font-bold mb-2">Create your own itinerary</h3>
               <p className="text-white/70 text-sm mb-4">Build your own day with a qualified guide and a private vehicle. 08h00–17h00, within 200 km of Cape Town. 2 bottles of water per person included; entrances for own account.</p>
