@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Script from "next/script";
 import { Check, Plus, Clock, Users, Car, Loader2, CheckCircle2, ArrowRight, X } from "lucide-react";
-import { LIVE_TOURS, TOURS, BAND_LABELS, bandFor, VEHICLES, vehicleFor, AFTER_HOURS_PER_HOUR, DEPOSIT_PER_PERSON, HIRE_IMG, tourImg } from "@/lib/tours";
+import { LIVE_TOURS, TOURS, BAND_LABELS, bandFor, VEHICLES, vehicleFor, AFTER_HOURS_PER_HOUR, DEPOSIT_PER_PERSON, HIRE_IMG, tourImg, SHOW_HIRE } from "@/lib/tours";
 import { Reveal } from "@/components/motion";
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
@@ -148,6 +148,7 @@ export default function TourBuilder() {
           })}
 
           {/* Create your own itinerary */}
+          {SHOW_HIRE && (
           <Reveal className="sm:col-span-2">
             <div className={`rounded-2xl p-6 text-white ${picked.includes(OWN) ? "ring-4 ring-[#C9A84C]/50" : ""}`} style={{ background: `linear-gradient(135deg, rgba(15,43,26,0.94) 0%, rgba(27,77,46,0.86) 55%, rgba(27,58,107,0.9) 100%), url(${tourImg(HIRE_IMG, 1400)}) center/cover` }}>
               <p className="text-[#C9A84C] text-xs font-semibold tracking-[0.2em] uppercase mb-2 flex items-center gap-2"><Car size={14} /> Vehicle &amp; guide hire</p>
@@ -171,6 +172,7 @@ export default function TourBuilder() {
               </div>
             </div>
           </Reveal>
+          )}
         </div>
       </div>
 

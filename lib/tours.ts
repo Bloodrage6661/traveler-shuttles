@@ -83,6 +83,8 @@ export const VEHICLES = [
   { name: "H1", maxPax: 5, perDay: 4700 },
   { name: "Quantum", maxPax: 10, perDay: 5940 },
 ];
+// Vehicle & guide hire card — off until it goes live.
+export const SHOW_HIRE = false;
 export const HIRE_IMG = "1580933884805-04ad67d96074";
 export const tourImg = (id: string, w = 800) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=70`;
 export const AFTER_HOURS_PER_HOUR = 220;
