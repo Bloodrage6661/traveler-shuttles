@@ -22,6 +22,7 @@ export default function TourBuilder() {
   const [date, setDate] = useState("");
   const [pickup, setPickup] = useState("");
   const [notes, setNotes] = useState("");
+  const [health, setHealth] = useState(""); // dietary & medical
   const [hp, setHp] = useState(""); // honeypot
   const [loadedAt] = useState(() => Date.now());
   const [token, setToken] = useState("");
@@ -73,6 +74,7 @@ export default function TourBuilder() {
       ...lines.map((l) => `- ${l.label}: ${l.amount != null ? `${R(l.amount)} ${l.unit}` : "price on request"}`),
       "",
       allPriced ? `Estimated total: ${R(total)} · deposit ${R(DEPOSIT_PER_PERSON * guests)}` : "Estimated total: on request",
+      health.trim() ? `\nDietary / medical: ${health.trim()}` : "",
       notes.trim() ? `\nNotes: ${notes.trim()}` : "",
     ].join("\n");
     setLoading(true);
@@ -132,12 +134,13 @@ export default function TourBuilder() {
                 </ul>
                 <div className="mt-auto flex items-end justify-between gap-3 pt-3 border-t border-slate-100">
                   <div>
-                    <p className="text-[11px] uppercase tracking-wide text-slate-400">Per person</p>
-                    <p className="text-lg font-bold text-[#1B3A6B]">{band == null ? "On request" : R(t.rates[band])}</p>
+                    <p className="text-[11px] uppercase tracking-wide text-slate-400">{guests} guest{guests > 1 ? "s" : ""}</p>
+                    <p className="text-lg font-bold text-[#1B3A6B]">{band == null ? "On request" : R(t.rates[band] * guests)}</p>
+                    {band != null && <p className="text-xs text-slate-400">{R(t.rates[band])} per person</p>}
                   </div>
                   <button type="button" onClick={() => toggle(t.n)} aria-pressed={on}
                     className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition ${on ? "bg-[#1B4D2E] text-white" : "border border-[#1B4D2E] text-[#1B4D2E] hover:bg-[#1B4D2E]/5"}`}>
-                    {on ? <><Check size={15} /> Added</> : <><Plus size={15} /> Add</>}
+                    {on ? <><Check size={15} /> Added to cart</> : <><Plus size={15} /> Add to cart</>}
                   </button>
                 </div>
               </Reveal>
@@ -163,7 +166,7 @@ export default function TourBuilder() {
                 <p className="text-xs text-white/55">After hours: {R(AFTER_HOURS_PER_HOUR)} per hour thereafter.</p>
                 <button type="button" onClick={() => toggle(OWN)} aria-pressed={picked.includes(OWN)}
                   className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition ${picked.includes(OWN) ? "bg-[#C9A84C] text-[#133820]" : "bg-white/10 border border-white/30 hover:bg-white/20"}`}>
-                  {picked.includes(OWN) ? <><Check size={15} /> Added</> : <><Plus size={15} /> Add</>}
+                  {picked.includes(OWN) ? <><Check size={15} /> Added to cart</> : <><Plus size={15} /> Add to cart</>}
                 </button>
               </div>
             </div>
@@ -215,7 +218,8 @@ export default function TourBuilder() {
               <input className={inputCls} type="date" aria-label="Preferred date" value={date} onChange={(e) => setDate(e.target.value)} />
               <input className={inputCls} placeholder="Pickup area" value={pickup} onChange={(e) => setPickup(e.target.value)} />
             </div>
-            <textarea className={`${inputCls} resize-none`} rows={3} placeholder="Anything else? Stops you'd like, dietary needs…" value={notes} onChange={(e) => setNotes(e.target.value)} />
+            <textarea className={`${inputCls} resize-none`} rows={2} aria-label="Dietary requirements and medical conditions" placeholder="Dietary requirements & medical conditions (allergies, mobility, etc.)" value={health} onChange={(e) => setHealth(e.target.value)} />
+            <textarea className={`${inputCls} resize-none`} rows={2} placeholder="Anything else? Stops you'd like…" value={notes} onChange={(e) => setNotes(e.target.value)} />
             {TURNSTILE_SITE_KEY && (
               <>
                 <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="afterInteractive" onLoad={renderTurnstile} />
