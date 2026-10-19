@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Script from "next/script";
 import { Check, Plus, Clock, Users, Car, Loader2, CheckCircle2, ArrowRight, X } from "lucide-react";
-import { TOURS, BAND_LABELS, bandFor, VEHICLES, vehicleFor, AFTER_HOURS_PER_HOUR, DEPOSIT_PER_PERSON, HIRE_IMG, tourImg } from "@/lib/tours";
+import { LIVE_TOURS, TOURS, BAND_LABELS, bandFor, VEHICLES, vehicleFor, AFTER_HOURS_PER_HOUR, DEPOSIT_PER_PERSON, HIRE_IMG, tourImg } from "@/lib/tours";
 import { Reveal } from "@/components/motion";
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
@@ -111,7 +111,7 @@ export default function TourBuilder() {
         </div>
 
         <div className="grid sm:grid-cols-2 gap-4">
-          {TOURS.map((t, i) => {
+          {LIVE_TOURS.map((t, i) => {
             const on = picked.includes(t.n);
             return (
               <Reveal key={t.n} delay={(i % 2) * 0.06} className={`rounded-2xl border bg-white p-5 pt-0 overflow-hidden flex flex-col transition-shadow ${on ? "border-[#1B4D2E] ring-2 ring-[#1B4D2E]/20 shadow-md" : "border-slate-100 shadow-sm hover:shadow-md"}`}>

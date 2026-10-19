@@ -62,6 +62,10 @@ export const TOURS: Tour[] = [
     excludes: "Lunch", rates: [2800, 2630, 1900, 1620] },
 ];
 
+// Tours currently offered on the site. Add numbers here to switch more on.
+const LIVE = ["01"];
+export const LIVE_TOURS = TOURS.filter((t) => LIVE.includes(t.n));
+
 export const BAND_LABELS = ["2 pax", "3–4 pax", "5–7 pax", "8–10 pax"];
 
 /** Index into Tour.rates for a group size, or null when it's priced on request (1 or 11+). */
