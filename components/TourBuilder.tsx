@@ -178,7 +178,7 @@ export default function TourBuilder() {
 
       {/* My tour */}
       <aside id="my-tour" className="lg:sticky lg:top-24 scroll-mt-24 bg-white rounded-2xl border border-slate-100 shadow-lg p-6">
-        <h2 className="font-bold text-xl text-slate-900 mb-1">Build my tour</h2>
+        <h2 className="font-bold text-xl text-slate-900 mb-1 flex items-center justify-between">Your cart <span className="text-sm font-semibold text-slate-400">{picked.length} item{picked.length === 1 ? "" : "s"}</span></h2>
         <p className="text-sm text-slate-500 mb-4">Add tours, then send it through — we&apos;ll confirm availability and your final price.</p>
 
         {sent ? (
@@ -190,7 +190,7 @@ export default function TourBuilder() {
         ) : (
           <form onSubmit={submit} noValidate className="space-y-3">
             {lines.length === 0 ? (
-              <p className="rounded-xl bg-slate-50 border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-400">No tours added yet.</p>
+              <p className="rounded-xl bg-slate-50 border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-400">Your cart is empty.</p>
             ) : (
               <ul className="space-y-2">
                 {lines.map((l, i) => (
@@ -204,12 +204,15 @@ export default function TourBuilder() {
                 ))}
               </ul>
             )}
-            {lines.length > 0 && (
-              <div className="rounded-xl bg-[#F9F5EF] px-4 py-3 text-sm">
-                <div className="flex justify-between font-bold text-slate-900"><span>Estimated total · {guests} guest{guests > 1 ? "s" : ""}</span><span>{allPriced ? R(total) : "On request"}</span></div>
-                <p className="text-xs text-slate-500 mt-1">Deposit {R(DEPOSIT_PER_PERSON)} per person secures your booking; balance on the day.</p>
+            <div className="rounded-xl bg-[#F9F5EF] px-4 py-3">
+              <div className="flex items-baseline justify-between text-slate-900">
+                <span className="font-semibold text-sm">Cart total · {guests} guest{guests > 1 ? "s" : ""}</span>
+                <span className="text-2xl font-bold text-[#1B3A6B]">{lines.length === 0 ? R(0) : allPriced ? R(total) : "On request"}</span>
               </div>
-            )}
+              {lines.length > 0 && allPriced && (
+                <p className="text-xs text-slate-500 mt-1">Deposit to secure: {R(DEPOSIT_PER_PERSON * guests)} ({R(DEPOSIT_PER_PERSON)} per person) · balance on the day.</p>
+              )}
+            </div>
 
             <input type="text" name="company" tabIndex={-1} autoComplete="off" aria-hidden="true" value={hp} onChange={(e) => setHp(e.target.value)}
               style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }} />
@@ -240,8 +243,8 @@ export default function TourBuilder() {
       {/* Mobile: jump to the summary once something's picked */}
       {picked.length > 0 && !sent && (
         <a href="#my-tour" className="lg:hidden fixed bottom-4 left-4 right-20 z-40 flex items-center justify-between rounded-full bg-[#1B4D2E] text-white px-5 py-3 shadow-xl">
-          <span className="text-sm font-semibold">{picked.length} added · {allPriced ? R(total) : "on request"}</span>
-          <span className="text-sm font-bold flex items-center gap-1">Review <ArrowRight size={15} /></span>
+          <span className="text-sm font-semibold">Cart ({picked.length}) · {allPriced ? R(total) : "on request"}</span>
+          <span className="text-sm font-bold flex items-center gap-1">View cart <ArrowRight size={15} /></span>
         </a>
       )}
     </div>
