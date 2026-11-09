@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getBand, getFare } from "@/lib/pricing";
 import type { CustomerTier } from "@/lib/pricing";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { loyaltyEligible } from "@/lib/loyalty";
 
 type Point = { lat: number; lon: number };
 
@@ -9,11 +10,12 @@ export async function POST(req: NextRequest) {
   if (!rateLimit(`fare:${clientIp(req)}`, 40, 5 * 60_000)) {
     return NextResponse.json({ error: "Too many requests." }, { status: 429 });
   }
-  const { pickup, dropoff, passengers, customerTier } = (await req.json()) as {
+  const { pickup, dropoff, passengers, customerTier, email } = (await req.json()) as {
     pickup?: Point;
     dropoff?: Point;
     passengers?: number;
     customerTier?: CustomerTier;
+    email?: string;
   };
 
   if (!pickup?.lat || !pickup?.lon || !dropoff?.lat || !dropoff?.lon) {
@@ -49,7 +51,8 @@ export async function POST(req: NextRequest) {
     const band = getBand(distanceKm);
     const fare = getFare(band, passengers ?? 1, customerTier ?? "General");
 
-    return NextResponse.json({ distanceKm, band, fare });
+    const loyalty = fare != null && (await loyaltyEligible(email));
+    return NextResponse.json({ distanceKm, band, fare, loyalty });
   } catch (err) {
     console.error("calculate-fare routing error:", err);
     return NextResponse.json({ error: "Distance service unavailable" }, { status: 502 });

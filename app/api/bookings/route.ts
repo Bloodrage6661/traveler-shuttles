@@ -4,6 +4,7 @@ import { sendDriverNotification, sendClientPending } from "@/lib/email";
 import { checkSlot } from "@/lib/availability";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { sendWhatsAppAlert } from "@/lib/whatsapp";
+import { loyaltyEligible } from "@/lib/loyalty";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
 
@@ -18,7 +19,7 @@ export async function POST(req: NextRequest) {
       clientName, clientEmail, clientCell,
       pickupAddress, dropoffAddress,
       distanceKm, passengers, tripType,
-      customerTier, pricingBand, fareZar,
+      customerTier, pricingBand, fareZar: clientFare,
       preferredDate, preferredTimeWindow, flightNumber,
       userId,
     } = body;
@@ -35,6 +36,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: slot.message }, { status: 409 });
       }
     }
+
+    // Loyalty: every 6th confirmed trip is half price — decided here, never by the client.
+    const loyalty = typeof clientFare === "number" && (await loyaltyEligible(clientEmail));
+    const fareZar = loyalty ? Math.round(clientFare / 2) : clientFare;
 
     const cleanFlight = typeof flightNumber === "string" && flightNumber.trim()
       ? flightNumber.trim().toUpperCase()
@@ -90,6 +95,7 @@ export async function POST(req: NextRequest) {
         pricingBand, fareZar,
         preferredDate, preferredTimeWindow,
         flightNumber: cleanFlight,
+        loyalty,
       }),
       sendClientPending({
         id: booking.id,
@@ -100,7 +106,7 @@ export async function POST(req: NextRequest) {
       // WhatsApp Greg with the details + a dashboard link to accept the booking.
       sendWhatsAppAlert(
         `New booking from ${clientName}`,
-        `${preferredDate ?? "date TBC"} ${preferredTimeWindow ?? ""} · ${passengers ?? 1} pax · ${fareZar ? "R" + fareZar : "custom quote"}${cleanFlight ? " · " + cleanFlight : ""}`,
+        `${preferredDate ?? "date TBC"} ${preferredTimeWindow ?? ""} · ${passengers ?? 1} pax · ${fareZar ? "R" + fareZar : "custom quote"}${loyalty ? " (6th trip ½ price)" : ""}${cleanFlight ? " · " + cleanFlight : ""}`,
         `${BASE_URL}/admin?booking=${booking.id}`,
       ),
     ]);
@@ -108,6 +114,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       bookingId: booking.id,
       ref: booking.id.slice(0, 8).toUpperCase(),
+      loyalty,
+      fareZar,
     });
   } catch (err) {
     console.error(err);

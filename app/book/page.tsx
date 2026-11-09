@@ -21,6 +21,7 @@ const perks = [
   "Driver confirms within the hour",
   "Real-time flight tracking on airport transfers",
   "No payment required upfront — pay on the day",
+  "Traveler Rewards — every 6th trip is half price",
 ];
 
 export default function BookPage() {

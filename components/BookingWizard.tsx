@@ -1,15 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { Plane, Users, Phone, Mail, User, ChevronRight, Check, Loader2, Clock, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Plane, Users, Phone, Mail, User, ChevronRight, Check, Loader2, Clock, X, Star } from "lucide-react";
 import { formatRand, applyWeekendSurcharge, isWeekendDate, WEEKEND_SURCHARGE, type PricingBand, type CustomerTier } from "@/lib/pricing";
 import { PICKUP_MIN, PICKUP_MAX, isPickupTimeInRange } from "@/lib/time";
 import { useAuth } from "@/lib/auth";
+import { getSupabaseBrowser } from "@/lib/supabase";
 import AddressAutocomplete, { type SelectedPlace } from "@/components/AddressAutocomplete";
 
 type SlotResult = { available: boolean; message: string };
 type Step = "you" | "trip" | "route" | "done";
-type Quote = { distanceKm: number; band: PricingBand; fare: number | null };
+type Quote = { distanceKm: number; band: PricingBand; fare: number | null; loyalty: boolean };
+// A past trip handed over from the dashboard "Book again" button.
+type Rebook = { name: string; email: string; cell: string; tier: CustomerTier; passengers: number; pickup: string; dropoff: string; id?: string; date?: string; time?: string };
 
 const STEPS: Step[] = ["you", "trip", "route", "done"];
 const STEP_LABELS = ["Your Details", "Trip", "Addresses"];
@@ -53,17 +56,11 @@ export default function BookingWizard() {
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState<string | null>(null);
 
-  // Pre-fill from the pricing gate (sessionStorage), read once.
-  const getPrefill = (key: string) => {
-    if (typeof window === "undefined") return "";
-    const val = sessionStorage.getItem(key) ?? "";
-    if (val) sessionStorage.removeItem(key);
-    return val;
-  };
+  const [rebook, setRebook] = useState<Rebook | null>(null);
 
   // Pane 1 — who
-  const [name,  setName]  = useState(() => getPrefill("prefill_name"));
-  const [email, setEmail] = useState(() => getPrefill("prefill_email"));
+  const [name,  setName]  = useState("");
+  const [email, setEmail] = useState("");
   const [cell,  setCell]  = useState("");
 
   // Pane 2 — trip
@@ -71,6 +68,7 @@ export default function BookingWizard() {
   const [passengers,   setPassengers]   = useState(1);
   const [date,         setDate]         = useState("");
   const [time,         setTime]         = useState("");
+  const changingId = rebook?.id; // set when changing an existing booking
   const [slot,         setSlot]         = useState<SlotResult | null>(null);
 
   // Pane 3 — addresses
@@ -83,11 +81,48 @@ export default function BookingWizard() {
   const [quoting,       setQuoting]       = useState(false);
 
   const [bookingRef, setBookingRef] = useState<string | null>(null);
+  const [loyaltyApplied, setLoyaltyApplied] = useState(false);
+
+  // Pre-fill once on mount: a trip from the dashboard ("Book again" / "Change"),
+  // else name & email from the pricing gate. Read after mount so it matches hydration.
+  useEffect(() => {
+    const take = (k: string) => { const v = sessionStorage.getItem(k) ?? ""; sessionStorage.removeItem(k); return v; };
+    let r: Rebook | null = null;
+    try { r = JSON.parse(take("rebook") || "null"); } catch { /* ignore */ }
+    const gateName = take("prefill_name"), gateEmail = take("prefill_email");
+    /* eslint-disable react-hooks/set-state-in-effect -- one-time read of browser-only storage */
+    if (!r) { setName(gateName); setEmail(gateEmail); return; }
+    setRebook(r);
+    setName(r.name); setEmail(r.email); setCell(r.cell);
+    setCustomerTier(r.tier); setPassengers(r.passengers);
+    setPickup(r.pickup); setDropoff(r.dropoff);
+    if (r.date) setDate(r.date);
+    if (r.time) setTime(r.time);
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, []);
+
+  // Rebooking: look the saved addresses up again so the fare can be measured.
+  useEffect(() => {
+    if (!rebook) return;
+    const key = process.env.NEXT_PUBLIC_GEOAPIFY_API_KEY;
+    const find = async (text: string): Promise<SelectedPlace | null> => {
+      if (!key || !text) return null;
+      try {
+        const r = await fetch(`https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(text)}&filter=countrycode:za&limit=1&format=json&apiKey=${key}`);
+        const hit = (await r.json())?.results?.[0];
+        return hit ? { address: text, lat: hit.lat, lon: hit.lon } : null;
+      } catch { return null; }
+    };
+    find(rebook.pickup).then(setPickupCoords);
+    find(rebook.dropoff).then(setDropoffCoords);
+  }, [rebook]);
 
   const todayISO = new Date().toISOString().slice(0, 10);
   const tripType = isAirport(dropoff) ? "to_airport" : isAirport(pickup) ? "from_airport" : "point_to_point";
   const isCustom = quote?.band === "custom";
   const finalFare = applyWeekendSurcharge(quote?.fare ?? null, date);
+  // What the guest pays: half on a loyalty trip (the server applies it for real).
+  const shownFare = finalFare != null && quote?.loyalty ? Math.round(finalFare / 2) : finalFare;
   const currentStep = STEPS.indexOf(step);
 
   const go = (s: Step) => { setError(null); setStep(s); };
@@ -96,7 +131,7 @@ export default function BookingWizard() {
     setSlot(null);
     if (!d || !t || !isPickupTimeInRange(t)) return;
     try {
-      const res = await fetch(`/api/availability/slot?date=${d}&time=${t}`);
+      const res = await fetch(`/api/availability/slot?date=${d}&time=${t}${changingId ? `&exclude=${changingId}` : ""}`);
       setSlot(await res.json());
     } catch { /* fail open — the server re-checks on submit */ }
   };
@@ -116,11 +151,12 @@ export default function BookingWizard() {
           dropoff: { lat: d.lat, lon: d.lon },
           passengers,
           customerTier,
+          email: email.trim(),
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Could not calculate your fare");
-      setQuote({ distanceKm: data.distanceKm, band: data.band, fare: data.fare });
+      setQuote({ distanceKm: data.distanceKm, band: data.band, fare: data.fare, loyalty: !!data.loyalty });
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Could not calculate your fare");
     } finally {
@@ -139,6 +175,8 @@ export default function BookingWizard() {
     if (!isPickupTimeInRange(time)) { setError("Pickup time must be between 04:00 and 24:00."); return; }
     if (slot && !slot.available) { setError(slot.message); return; }
     go("route");
+    // Coming from "Book again": the addresses are already known, so price it straight away.
+    if (pickupCoords && dropoffCoords && !quote) getQuote(pickupCoords, dropoffCoords);
   };
 
   const handleSubmit = async () => {
@@ -149,9 +187,10 @@ export default function BookingWizard() {
     }
     setLoading(true);
     try {
-      const res = await fetch("/api/bookings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const token = changingId ? (await getSupabaseBrowser().auth.getSession()).data.session?.access_token : null;
+      const res = await fetch(changingId ? `/api/bookings/${changingId}` : "/api/bookings", {
+        method: changingId ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({
           clientName: name.trim(),
           clientEmail: email.trim(),
@@ -173,6 +212,7 @@ export default function BookingWizard() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed to submit");
       setBookingRef(data.ref);
+      setLoyaltyApplied(!!data.loyalty);
       go("done");
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Something went wrong");
@@ -190,7 +230,7 @@ export default function BookingWizard() {
         <div className="inline-flex items-center gap-2 bg-[#1B4D2E]/10 text-[#1B4D2E] text-xs font-semibold tracking-widest uppercase px-4 py-2 rounded-full mb-4">
           <Plane size={12} /> Transfer Booking
         </div>
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">Book Your Transfer</h1>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">{changingId ? "Change Your Booking" : "Book Your Transfer"}</h1>
         <p className="text-slate-500 text-sm">Three quick steps — no payment now.</p>
       </div>
 
@@ -317,7 +357,15 @@ export default function BookingWizard() {
                   <p className="text-white/60 text-xs uppercase tracking-widest mb-1">
                     {isCustom ? "Custom quote" : "Estimated fare"} · {passengers} pax · {quote.distanceKm} km
                   </p>
-                  <p className="text-3xl font-bold">{isCustom ? "We'll quote you" : finalFare != null ? formatRand(finalFare) : "—"}</p>
+                  <p className="text-3xl font-bold">
+                    {isCustom ? "We'll quote you" : shownFare != null ? formatRand(shownFare) : "—"}
+                    {!isCustom && quote.loyalty && finalFare != null && <span className="ml-2 text-base font-semibold text-white/50 line-through">{formatRand(finalFare)}</span>}
+                  </p>
+                  {!isCustom && quote.loyalty && (
+                    <p className="mt-2 inline-flex items-center gap-1.5 bg-[#C9A84C] text-[#133820] text-xs font-bold px-3 py-1.5 rounded-full">
+                      <Star size={12} /> Traveler Rewards: your 6th trip is half price
+                    </p>
+                  )}
                   <p className="mt-2 text-white/70 text-xs leading-relaxed">
                     {isCustom
                       ? "This trip is beyond our standard range — send it through and we'll reply with a price."
@@ -335,7 +383,7 @@ export default function BookingWizard() {
               <div>
                 <button onClick={handleSubmit} disabled={loading || quoting}
                   className="w-full py-3.5 rounded-xl bg-[#1B4D2E] text-white font-bold text-sm flex items-center justify-center gap-2 hover:bg-[#246038] transition disabled:opacity-50">
-                  {loading ? <Loader2 size={16} className="animate-spin" /> : <><Check size={16} /> {isCustom ? "Send Quote Request" : "Confirm Booking Request"}</>}
+                  {loading ? <Loader2 size={16} className="animate-spin" /> : <><Check size={16} /> {changingId ? "Save Changes" : isCustom ? "Send Quote Request" : "Confirm Booking Request"}</>}
                 </button>
                 <button onClick={() => go("trip")} className={backBtn}>← Back</button>
               </div>
@@ -349,7 +397,7 @@ export default function BookingWizard() {
                 <Check size={28} />
               </div>
               <h2 className="font-bold text-slate-900 text-2xl mb-2">
-                {isCustom ? "Quote Request Sent!" : "Booking Received!"}
+                {changingId ? "Changes Sent!" : isCustom ? "Quote Request Sent!" : "Booking Received!"}
               </h2>
               {bookingRef && (
                 <div className="inline-block bg-[#F9F5EF] border border-[#C9A84C]/30 rounded-xl px-6 py-3 my-4">
@@ -358,10 +406,13 @@ export default function BookingWizard() {
                 </div>
               )}
               <p className="text-slate-500 text-sm leading-relaxed max-w-sm mx-auto">
-                {isCustom
+                {changingId
+                  ? "Your updated booking has been sent. The driver will review and re-confirm it shortly."
+                  : isCustom
                   ? "We've received your request and will be in touch with personalised pricing."
                   : "We've sent you a confirmation email. The driver will review and confirm your booking shortly."}
               </p>
+              {loyaltyApplied && <p className="text-[#1B4D2E] text-sm font-semibold mt-3">Traveler Rewards applied — this trip is half price. Thank you for travelling with us!</p>}
               <p className="text-slate-400 text-xs mt-4">Keep your reference number handy.</p>
             </div>
           )}

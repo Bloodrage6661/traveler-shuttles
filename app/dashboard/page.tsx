@@ -6,11 +6,12 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   Plane, CalendarDays, Clock, MapPin, Users, LogOut,
-  ChevronDown, ChevronUp, ArrowRight, Loader2, CheckCircle2, XCircle, AlertCircle,
+  ChevronDown, ChevronUp, ArrowRight, Loader2, CheckCircle2, XCircle, AlertCircle, RotateCcw, Star, Pencil,
 } from "lucide-react";
 import { getSupabaseBrowser } from "@/lib/supabase";
 import { formatPickupTime } from "@/lib/time";
 import type { User } from "@supabase/supabase-js";
+import { LOYALTY_EVERY } from "@/lib/loyalty-rule";
 
 type BookingStatus = "pending" | "confirmed" | "cancelled";
 
@@ -18,6 +19,8 @@ interface Booking {
   id: string;
   created_at: string;
   client_name: string;
+  client_email: string;
+  client_cell: string;
   pickup_address: string;
   dropoff_address: string;
   passengers: number;
@@ -43,7 +46,19 @@ const TRIP_LABELS: Record<string, string> = {
   point_to_point: "Point-to-point",
 };
 
+// "Book again": hand the trip to the booking form, which pre-fills everything but the date & time.
+// With change=true it edits this booking instead of making a new one.
+function rebook(b: Booking, push: (url: string) => void, change = false) {
+  sessionStorage.setItem("rebook", JSON.stringify({
+    name: b.client_name, email: b.client_email, cell: b.client_cell, tier: b.customer_tier,
+    passengers: b.passengers, pickup: b.pickup_address, dropoff: b.dropoff_address,
+    ...(change ? { id: b.id, date: b.preferred_date ?? "", time: b.preferred_time_window ?? "" } : {}),
+  }));
+  push("/book");
+}
+
 function BookingCard({ booking }: { booking: Booking }) {
+  const router = useRouter();
   const [expanded, setExpanded] = useState(false);
   const ref = booking.id.slice(0, 8).toUpperCase();
   const { icon: Icon, label, color, bg } = STATUS_CONFIG[booking.status];
@@ -65,6 +80,16 @@ function BookingCard({ booking }: { booking: Booking }) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2 flex-wrap">
               <span className="font-bold text-slate-900 text-sm font-mono">#{ref}</span>
+              <button type="button" onClick={() => rebook(booking, router.push)}
+                className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-[#1B4D2E] text-white hover:bg-[#246038] transition-colors">
+                <RotateCcw size={11} aria-hidden="true" /> Book again
+              </button>
+              {booking.status !== "cancelled" && (booking.preferred_date ?? "9999") >= new Date().toISOString().slice(0, 10) && (
+                <button type="button" onClick={() => rebook(booking, router.push, true)}
+                  className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border border-[#1B3A6B] text-[#1B3A6B] hover:bg-[#1B3A6B]/5 transition-colors">
+                  <Pencil size={11} aria-hidden="true" /> Change
+                </button>
+              )}
               <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${bg} ${color}`}>
                 <Icon size={11} aria-hidden="true" /> {label}
               </span>
@@ -133,7 +158,7 @@ export default function DashboardPage() {
     const { data } = await sb
       .from("bookings")
       .select(
-        "id,created_at,client_name,pickup_address,dropoff_address,passengers,trip_type,customer_tier,pricing_band,fare_zar,preferred_date,preferred_time_window,status",
+        "id,created_at,client_name,client_email,client_cell,pickup_address,dropoff_address,passengers,trip_type,customer_tier,pricing_band,fare_zar,preferred_date,preferred_time_window,status",
       )
       .eq("user_id", u.id)
       .order("created_at", { ascending: false });
@@ -161,6 +186,9 @@ export default function DashboardPage() {
   const pendingCount  = bookings.filter(b => b.status === "pending").length;
   const totalSpent    = bookings.filter(b => b.status === "confirmed").reduce((s, b) => s + (b.fare_zar ?? 0), 0);
   const firstName     = user?.user_metadata?.full_name?.split(" ")[0] ?? "there";
+  // Loyalty: after every 5 confirmed trips the next one is half price.
+  const confirmedCount = bookings.filter(b => b.status === "confirmed").length;
+  const loyaltyStep    = confirmedCount % LOYALTY_EVERY; // 0–5 trips towards the reward
 
   if (loading) {
     return (
@@ -190,6 +218,23 @@ export default function DashboardPage() {
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-slate-900 mb-1">Hi {firstName} 👋</h1>
           <p className="text-slate-500 text-sm">{user?.email}</p>
+        </div>
+
+        {/* Loyalty */}
+        <div className="mb-6 bg-white rounded-2xl border border-[#C9A84C]/30 shadow-sm p-5 flex flex-wrap items-center gap-4">
+          <span className="grid place-items-center w-11 h-11 rounded-xl bg-[#C9A84C]/15 text-[#C9A84C]"><Star size={20} fill="#C9A84C" aria-hidden="true" /></span>
+          <div className="flex-1 min-w-[12rem]">
+            <p className="text-[11px] font-bold tracking-[0.15em] uppercase text-[#C9A84C]">Traveler Rewards</p>
+            <p className="font-semibold text-slate-900 text-sm">
+              {loyaltyStep === LOYALTY_EVERY - 1 ? "Your next trip is half price!" : `${loyaltyStep} of ${LOYALTY_EVERY - 1} trips towards a half-price trip`}
+            </p>
+            <div className="mt-2 flex gap-1.5" aria-hidden="true">
+              {Array.from({ length: LOYALTY_EVERY - 1 }, (_, i) => (
+                <span key={i} className={`h-2 flex-1 rounded-full ${i < loyaltyStep ? "bg-[#C9A84C]" : "bg-slate-100"}`} />
+              ))}
+            </div>
+            <p className="text-xs text-slate-400 mt-1.5">Every 6th confirmed trip is automatically 50% off.</p>
+          </div>
         </div>
 
         {/* Stats */}

@@ -35,12 +35,14 @@ export async function markAvailable(date: string) {
 }
 
 /** Pickup times ("HH:MM") already taken on a date (pending or confirmed trips). */
-export async function getBookedPickupTimes(date: string): Promise<string[]> {
-  const { data } = await getSupabaseAdmin()
+export async function getBookedPickupTimes(date: string, excludeId?: string): Promise<string[]> {
+  let q = getSupabaseAdmin()
     .from("bookings")
     .select("preferred_time_window")
     .eq("preferred_date", date)
     .in("status", ["pending", "confirmed"]);
+  if (excludeId) q = q.neq("id", excludeId);
+  const { data } = await q;
   return (data ?? [])
     .map((r: { preferred_time_window: string | null }) => r.preferred_time_window)
     .filter((t: string | null): t is string => !!t);
@@ -53,7 +55,7 @@ export type SlotCheck = {
 };
 
 /** Checks a specific date + time against blocked days and the 135-min spacing rule. */
-export async function checkSlot(date: string, time: string): Promise<SlotCheck> {
+export async function checkSlot(date: string, time: string, excludeId?: string): Promise<SlotCheck> {
   if (!isPickupTimeInRange(time)) {
     return { available: false, reason: "out_of_range", message: "Pickups are available between 04:00 and 24:00." };
   }
@@ -67,7 +69,7 @@ export async function checkSlot(date: string, time: string): Promise<SlotCheck> 
   }
 
   const wanted = pickupMinutes(time)!;
-  const taken = await getBookedPickupTimes(date);
+  const taken = await getBookedPickupTimes(date, excludeId);
   const clash = taken.find((t) => {
     const m = pickupMinutes(t);
     return m != null && Math.abs(m - wanted) < MIN_SLOT_GAP_MIN;

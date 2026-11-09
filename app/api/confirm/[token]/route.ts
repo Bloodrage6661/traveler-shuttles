@@ -60,7 +60,7 @@ export async function GET(
         fareZar: booking.fare_zar,
         preferredDate: booking.preferred_date,
         preferredTimeWindow: booking.preferred_time_window,
-      }),
+      }, Math.floor((Date.now() - Date.UTC(2026, 0, 1)) / 1000)), // rising SEQUENCE so a changed booking updates the event
     ]);
 
     return NextResponse.redirect(`${BASE_URL}/confirm/accepted`);

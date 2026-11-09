@@ -273,6 +273,23 @@ export default function HomePage() {
         </section>
         </Pane>
 
+        {/* ── Traveler Rewards ── */}
+        <Pane fx="split">
+          <section className="px-4 sm:px-6 lg:px-8 py-14 bg-white" aria-labelledby="rewards-heading">
+            <div className="max-w-5xl mx-auto rounded-3xl p-8 sm:p-10 flex flex-col md:flex-row items-start md:items-center gap-6 text-white" style={{ background: "linear-gradient(135deg, #0F2B1A 0%, #1B4D2E 55%, #1B3A6B 100%)" }}>
+              <span className="grid place-items-center shrink-0 w-14 h-14 rounded-2xl bg-[#C9A84C]/20 text-[#C9A84C]"><Star size={26} fill="#C9A84C" aria-hidden="true" /></span>
+              <div className="flex-1">
+                <p className="text-[#C9A84C] text-xs font-semibold tracking-[0.2em] uppercase mb-2">Traveler Rewards</p>
+                <h2 id="rewards-heading" className="text-2xl sm:text-3xl font-bold mb-2">Every 6th trip is half price</h2>
+                <p className="text-white/70 text-sm sm:text-base">Take 5 trips with us and your next one is automatically 50% off — no codes, no cards. Sign in to track your trips, rebook in one tap and change bookings yourself.</p>
+              </div>
+              <Link href="/signup" className="shrink-0 inline-flex items-center gap-2 bg-[#C9A84C] hover:bg-[#D4B870] text-[#133820] font-bold px-6 py-3 rounded-full transition-colors text-sm">
+                Join free <ArrowRight size={16} aria-hidden="true" />
+              </Link>
+            </div>
+          </section>
+        </Pane>
+
         {/* ── Pricing gate ── */}
         <Pane fx="split"><PricingGate /></Pane>
 

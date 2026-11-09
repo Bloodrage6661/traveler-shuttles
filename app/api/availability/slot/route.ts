@@ -8,7 +8,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "date (YYYY-MM-DD) and time (HH:MM) required" }, { status: 400 });
   }
   try {
-    return NextResponse.json(await checkSlot(date, time));
+    // exclude: the booking being changed, so it doesn't clash with itself (the save re-checks this with auth).
+    const exclude = req.nextUrl.searchParams.get("exclude") ?? undefined;
+    return NextResponse.json(await checkSlot(date, time, exclude && /^[0-9a-f-]{36}$/i.test(exclude) ? exclude : undefined));
   } catch (err) {
     console.error("Slot check error:", err);
     // Fail open: don't block a booking if the check itself errors.

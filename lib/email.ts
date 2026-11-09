@@ -95,6 +95,8 @@ export async function sendDriverNotification(booking: {
   customerTier: string;
   pricingBand: string;
   fareZar: number | null;
+  loyalty?: boolean;
+  changed?: boolean; // client changed an existing booking
   preferredDate: string | null;
   preferredTimeWindow: string | null;
   flightNumber?: string | null;
@@ -102,7 +104,7 @@ export async function sendDriverNotification(booking: {
   if (DRIVER_EMAILS.length === 0) return;
 
   const ref = booking.id.slice(0, 8).toUpperCase();
-  const fare = booking.fareZar ? `R ${booking.fareZar.toLocaleString("en-ZA")}` : "Custom quote required";
+  const fare = (booking.fareZar ? `R ${booking.fareZar.toLocaleString("en-ZA")}` : "Custom quote required") + (booking.loyalty ? " (6th-trip loyalty: 50% off applied)" : "");
   const date = booking.preferredDate ?? "Not specified";
   const pickupTimeLabel = formatPickupTime(booking.preferredTimeWindow);
 
@@ -110,7 +112,7 @@ export async function sendDriverNotification(booking: {
   const declineUrl = `${BASE_URL}/api/confirm/${booking.confirmToken}?action=decline`;
 
   const body = `
-    <h2 style="margin:0 0 4px;font-size:20px;color:${BRAND.dark};">New Booking Request</h2>
+    <h2 style="margin:0 0 4px;font-size:20px;color:${BRAND.dark};">${booking.changed ? "Booking Changed by Client — please re-confirm" : "New Booking Request"}</h2>
     <p style="margin:0 0 24px;color:#666;font-size:14px;">Reference: <strong>#${ref}</strong></p>
     <table cellpadding="0" cellspacing="0" style="width:100%;margin-bottom:24px;">
       ${row("Client", booking.clientName)}
@@ -147,7 +149,7 @@ export async function sendDriverNotification(booking: {
   await getResend().emails.send({
     from: "Traveler Shuttles <noreply@travelershuttlesandtours.co.za>",
     to: DRIVER_EMAILS,
-    subject: `New booking request #${ref} — ${booking.clientName}`,
+    subject: `${booking.changed ? "Booking changed" : "New booking request"} #${ref} — ${booking.clientName}`,
     html: layout(body),
   });
 }
