@@ -63,7 +63,7 @@ export const TOURS: Tour[] = [
 ];
 
 // Tours currently offered on the site. Add numbers here to switch more on.
-const LIVE = ["01"];
+const LIVE = ["01", "14"];
 export const LIVE_TOURS = TOURS.filter((t) => LIVE.includes(t.n));
 
 export const BAND_LABELS = ["2 pax", "3–4 pax", "5–7 pax", "8–10 pax"];
