@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { LogOut, Check, X, CalendarDays, Clock, Loader2, Users, MapPin, Phone, Mail, ChevronDown, ChevronUp, Plane, RefreshCw, LayoutDashboard, ListChecks, Wallet, CalendarClock, Search, Plus, Building2, ArrowLeft } from "lucide-react";
+import { LogOut, Check, X, CalendarDays, Clock, Loader2, Users, MapPin, Phone, Mail, ChevronDown, ChevronUp, Plane, RefreshCw, LayoutDashboard, ListChecks, Wallet, CalendarClock, Search, Plus, Building2, ArrowLeft, Pencil, RotateCcw } from "lucide-react";
 import { formatPickupTime, PICKUP_MIN, PICKUP_MAX } from "@/lib/time";
 import { TIER_LABELS, type CustomerTier } from "@/lib/pricing";
 import AdminOverview from "@/components/AdminOverview";
@@ -282,7 +282,7 @@ function AdminCalendar() {
 
 // ─── Booking card ─────────────────────────────────────────────────────────────
 
-function BookingCard({ booking, onUpdate, defaultExpanded, onSelectCustomer }: { booking: Booking; onUpdate: () => void; defaultExpanded?: boolean; onSelectCustomer?: (email: string) => void }) {
+function BookingCard({ booking, onUpdate, defaultExpanded, onSelectCustomer, onOpenForm }: { booking: Booking; onUpdate: () => void; defaultExpanded?: boolean; onSelectCustomer?: (email: string) => void; onOpenForm?: (b: Booking, mode: FormMode) => void }) {
   const [expanded, setExpanded] = useState(defaultExpanded ?? false);
   const [loading, setLoading]   = useState(false);
   const [finalPrice, setFinalPrice] = useState<string>(booking.fare_zar != null ? String(booking.fare_zar) : "");
@@ -394,6 +394,21 @@ function BookingCard({ booking, onUpdate, defaultExpanded, onSelectCustomer }: {
             </div>
             <div className="text-slate-500 text-xs">{booking.distance_km} km · {booking.trip_type.replace(/_/g, " ")} · {booking.pricing_band}</div>
           </div>
+
+          {onOpenForm && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {booking.status !== "cancelled" && (
+                <button onClick={() => onOpenForm(booking, "edit")}
+                  className="inline-flex items-center gap-1.5 py-2 px-3.5 rounded-lg border border-[#1B3A6B] text-[#1B3A6B] text-xs font-bold hover:bg-[#1B3A6B]/5 transition">
+                  <Pencil size={12} /> Edit details
+                </button>
+              )}
+              <button onClick={() => onOpenForm(booking, "reissue")}
+                className="inline-flex items-center gap-1.5 py-2 px-3.5 rounded-lg bg-[#1B4D2E] text-white text-xs font-bold hover:bg-[#246038] transition">
+                <RotateCcw size={12} /> Re-issue (new date)
+              </button>
+            </div>
+          )}
 
           {booking.flight_number && (
             <div className="mb-4">
@@ -507,13 +522,18 @@ const TRIP_OPTIONS: { value: string; label: string }[] = [
   { value: "point_to_point", label: "Point-to-point" },
 ];
 
-function NewBookingModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+type FormMode = "new" | "edit" | "reissue";
+
+// One form for a new booking, editing a booking, or re-issuing it on a new date.
+function NewBookingModal({ onClose, onCreated, from, mode = "new" }: { onClose: () => void; onCreated: () => void; from?: Booking; mode?: FormMode }) {
+  const keepWhen = mode === "edit"; // re-issue starts with a blank date & time
   const [f, setF] = useState({
-    clientName: "", companyName: "", clientEmail: "", clientCell: "",
-    pickupAddress: "", dropoffAddress: "",
-    passengers: "1", tripType: "point_to_point", customerTier: "General" as CustomerTier,
-    preferredDate: "", pickupTime: "", dropoffTime: "",
-    fareZar: "", flightNumber: "", status: "confirmed" as BookingStatus,
+    clientName: from?.client_name ?? "", companyName: from?.company_name ?? "", clientEmail: from?.client_email ?? "", clientCell: from?.client_cell ?? "",
+    pickupAddress: from?.pickup_address ?? "", dropoffAddress: from?.dropoff_address ?? "",
+    passengers: String(from?.passengers ?? 1), tripType: from?.trip_type ?? "point_to_point", customerTier: (from?.customer_tier ?? "General") as CustomerTier,
+    preferredDate: keepWhen ? from?.preferred_date ?? "" : "", pickupTime: keepWhen ? from?.preferred_time_window ?? "" : "", dropoffTime: keepWhen ? from?.dropoff_time ?? "" : "",
+    fareZar: from?.fare_zar != null ? String(from.fare_zar) : "", flightNumber: keepWhen ? from?.flight_number ?? "" : "",
+    status: (mode === "edit" && from ? from.status : "confirmed") as BookingStatus,
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -527,10 +547,11 @@ function NewBookingModal({ onClose, onCreated }: { onClose: () => void; onCreate
     if (!f.clientName.trim()) { setError("Client name is required."); return; }
     setSaving(true);
     try {
-      const res = await fetch("/api/admin/bookings", {
-        method: "POST",
+      const editing = mode === "edit" && from;
+      const res = await fetch(editing ? `/api/admin/bookings/${from.id}` : "/api/admin/bookings", {
+        method: editing ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(f),
+        body: JSON.stringify(editing ? { action: "update_details", ...f } : f),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) { setError(data.error ?? "Could not save the booking."); return; }
@@ -547,7 +568,7 @@ function NewBookingModal({ onClose, onCreated }: { onClose: () => void; onCreate
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4" onClick={onClose}>
       <div className="my-8 w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-bold text-slate-900 text-lg flex items-center gap-2"><Plus size={18} className="text-[#1B3A6B]" /> New booking</h2>
+          <h2 className="font-bold text-slate-900 text-lg flex items-center gap-2"><Plus size={18} className="text-[#1B3A6B]" /> {mode === "edit" ? "Edit booking" : mode === "reissue" ? "Re-issue booking" : "New booking"}</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1"><X size={18} /></button>
         </div>
 
@@ -583,7 +604,7 @@ function NewBookingModal({ onClose, onCreated }: { onClose: () => void; onCreate
           <div className="grid grid-cols-3 gap-3">
             <div><label className={lbl}>Fare (R)</label><input className={inp} type="number" min="0" value={f.fareZar} onChange={e => set("fareZar", e.target.value)} placeholder="e.g. 350" /></div>
             <div><label className={lbl}>Flight no.</label><input className={inp} value={f.flightNumber} onChange={e => set("flightNumber", e.target.value.toUpperCase())} placeholder="BA349" /></div>
-            <div>
+            <div className={mode === "edit" ? "hidden" : ""}>
               <label className={lbl}>Status</label>
               <select className={inp} value={f.status} onChange={e => set("status", e.target.value)}>
                 <option value="confirmed">Confirmed</option>
@@ -595,11 +616,11 @@ function NewBookingModal({ onClose, onCreated }: { onClose: () => void; onCreate
           <div className="flex gap-2 pt-1">
             <button onClick={submit} disabled={saving}
               className="flex-1 py-2.5 rounded-xl bg-[#1B4D2E] text-white text-sm font-bold flex items-center justify-center gap-1.5 hover:bg-[#246038] transition disabled:opacity-60">
-              {saving ? <Loader2 size={14} className="animate-spin" /> : <><Check size={14} /> Create booking</>}
+              {saving ? <Loader2 size={14} className="animate-spin" /> : <><Check size={14} /> {mode === "edit" ? "Save changes" : "Create booking"}</>}
             </button>
             <button onClick={onClose} className="py-2.5 px-4 rounded-xl bg-slate-100 text-slate-600 text-sm font-semibold hover:bg-slate-200 transition">Cancel</button>
           </div>
-          {f.status === "confirmed" && <p className="text-[11px] text-slate-400">A confirmed booking with a date &amp; time is added to your calendar.</p>}
+          {f.status === "confirmed" && <p className="text-[11px] text-slate-400">{mode === "edit" ? "Saving updates your calendar and emails the client the updated details." : "A confirmed booking with a date & time is added to your calendar."}</p>}
         </div>
       </div>
     </div>
@@ -615,6 +636,7 @@ function Dashboard({ bookings, loading, reload }: { bookings: Booking[]; loading
   const [search, setSearch]       = useState("");
   const [customerEmail, setCustomerEmail] = useState<string | null>(null);
   const [showNew, setShowNew]     = useState(false);
+  const [formFor, setFormFor]     = useState<{ booking: Booking; mode: FormMode } | null>(null);
 
   // Deep link from the driver email: /admin?booking=<id> opens that booking expanded on the bookings tab.
   useEffect(() => {
@@ -781,7 +803,7 @@ function Dashboard({ bookings, loading, reload }: { bookings: Booking[]; loading
               </div>
             ) : (
               <div className="space-y-3">
-                {filtered.map(b => <BookingCard key={b.id} booking={b} onUpdate={reload} onSelectCustomer={selectCustomer} defaultExpanded={highlight != null && (b.id === highlight || b.id.startsWith(highlight.toLowerCase()))} />)}
+                {filtered.map(b => <BookingCard key={b.id} booking={b} onUpdate={reload} onSelectCustomer={selectCustomer} onOpenForm={(booking, mode) => setFormFor({ booking, mode })} defaultExpanded={highlight != null && (b.id === highlight || b.id.startsWith(highlight.toLowerCase()))} />)}
               </div>
             )}
           </div>
@@ -794,6 +816,7 @@ function Dashboard({ bookings, loading, reload }: { bookings: Booking[]; loading
       )}
 
       {showNew && <NewBookingModal onClose={() => setShowNew(false)} onCreated={reload} />}
+      {formFor && <NewBookingModal key={formFor.booking.id + formFor.mode} from={formFor.booking} mode={formFor.mode} onClose={() => setFormFor(null)} onCreated={reload} />}
     </div>
   );
 }

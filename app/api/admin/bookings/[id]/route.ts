@@ -15,7 +15,8 @@ export async function PATCH(
   if (!auth(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  const { action, finalPrice, preferredDate, pickupTime, dropoffTime } = await req.json();
+  const body = await req.json();
+  const { action, finalPrice, preferredDate, pickupTime, dropoffTime } = body;
   const db = getSupabaseAdmin();
 
   const { data: booking } = await db.from("bookings").select("*").eq("id", id).single();
@@ -130,6 +131,54 @@ export async function PATCH(
     }
     const results = await Promise.allSettled(tasks);
     results.forEach((r, i) => { if (r.status === "rejected") console.error(`[reschedule] task ${i} failed:`, r.reason); });
+  } else if (action === "update_details") {
+    // Greg edits any detail of a booking (same fields as a manual booking).
+    const b = body;
+    if (!b.clientName || !String(b.clientName).trim()) {
+      return NextResponse.json({ error: "Client name is required." }, { status: 400 });
+    }
+    if (b.pickupTime && !isPickupTimeInRange(b.pickupTime)) {
+      return NextResponse.json({ error: "Pickup time must be between 04:00 and 24:00." }, { status: 400 });
+    }
+    const row = {
+      client_name: String(b.clientName).trim(),
+      company_name: b.companyName?.trim() || null,
+      client_email: b.clientEmail?.trim() || "",
+      client_cell: b.clientCell?.trim() || "",
+      pickup_address: b.pickupAddress?.trim() || "",
+      dropoff_address: b.dropoffAddress?.trim() || "",
+      passengers: Number(b.passengers) || 1,
+      trip_type: b.tripType || "point_to_point",
+      customer_tier: b.customerTier || "General",
+      fare_zar: b.fareZar != null && b.fareZar !== "" ? Math.round(Number(b.fareZar)) : null,
+      preferred_date: b.preferredDate || null,
+      preferred_time_window: b.pickupTime || null,
+      dropoff_time: b.dropoffTime || null,
+      flight_number: b.flightNumber?.trim().toUpperCase() || null,
+    };
+    const { error } = await db.from("bookings").update(row).eq("id", id);
+    if (error) {
+      console.error("update_details error:", error);
+      return NextResponse.json({ error: "Could not save the changes." }, { status: 500 });
+    }
+    if (booking.status === "confirmed") {
+      const sequence = Math.floor((Date.now() - Date.UTC(2026, 0, 1)) / 1000);
+      const results = await Promise.allSettled([
+        sendDriverCalendarInvite({
+          id, clientName: row.client_name, clientCell: row.client_cell, clientEmail: row.client_email,
+          pickupAddress: row.pickup_address, dropoffAddress: row.dropoff_address, passengers: row.passengers,
+          tripType: row.trip_type, fareZar: row.fare_zar, preferredDate: row.preferred_date,
+          preferredTimeWindow: row.preferred_time_window, dropoffTime: row.dropoff_time,
+        }, sequence),
+        // The client gets their confirmation again with the updated details.
+        sendClientConfirmed({
+          id, clientName: row.client_name, clientEmail: row.client_email,
+          pickupAddress: row.pickup_address, dropoffAddress: row.dropoff_address, passengers: row.passengers,
+          fareZar: row.fare_zar, preferredDate: row.preferred_date, preferredTimeWindow: row.preferred_time_window,
+        }),
+      ]);
+      results.forEach((r, i) => { if (r.status === "rejected") console.error(`[update_details] task ${i} failed:`, r.reason); });
+    }
   } else if (action === "cancel") {
     await db.from("bookings").update({ status: "cancelled", token_used: true }).eq("id", id);
     await sendClientDeclined({
