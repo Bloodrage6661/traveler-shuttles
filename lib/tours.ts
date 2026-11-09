@@ -19,7 +19,7 @@ const W = "Water on vehicle";
 
 export const TOURS: Tour[] = [
   { n: "01", img: "1626894169601-482d26b23f35", title: "Full Day Table Mountain & Peninsula", hours: "Full day",
-    includes: ["Collect at hotel", "Table Mountain Cableway", "Clifton & Camps Bay", "Chapman's Peak Drive", "Hout Bay and the spectacular coastal route via Misty Cliffs", "Cape of Good Hope Nature Reserve @ SANParks", "Cape Point @ SANParks", "The famous penguins at Boulders Beach", "Return to hotel/accommodation"],
+    includes: ["Collect at hotel", "Table Mountain Cableway", "Clifton & Camps Bay", "Chapman's Peak Drive", "Noordhoek to Cape of Good Hope via the spectacular coastal route via Misty Cliffs", "Cape of Good Hope Nature Reserve @ SANParks", "Cape Point @ SANParks", "The famous penguins at Boulders Beach", "Return to hotel/accommodation"],
     inc: "Driver/tour guide, vehicle and toll gate fees",
     excludes: "Entrance fees and extra trip fees if required; lunches, drinks and snacks (own account)",
     rates: [1750, 1750, 1750, 1750], solo: 2000, perPax: 1750, maxPax: 8 },
