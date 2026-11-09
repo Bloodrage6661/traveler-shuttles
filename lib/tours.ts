@@ -9,15 +9,20 @@ export type Tour = {
   excludes: string;
   rates: [number, number, number, number];
   img: string; // Unsplash photo id
+  // Optional simple pricing: `solo` for 1 guest, `perPax` each for 2+, up to `maxPax`.
+  solo?: number; perPax?: number; maxPax?: number;
+  inc?: string; // what the price includes, when it differs from the standard line
 };
 
 const T = "Return transfers with experienced tour guide";
 const W = "Water on vehicle";
 
 export const TOURS: Tour[] = [
-  { n: "01", img: "1626894169601-482d26b23f35", title: "Full Day Table Mountain & Peninsula", hours: "08h00–17h30",
-    includes: [T, W, "Table Mountain tickets (weather dependent)", "Boulders Beach penguins entrance", "Chapman's Peak drive", "Cape of Good Hope entrance + return funicular"],
-    excludes: "Lunch", rates: [3740, 3440, 2710, 2370] },
+  { n: "01", img: "1626894169601-482d26b23f35", title: "Full Day Table Mountain & Peninsula", hours: "Full day",
+    includes: ["Collect at hotel", "Table Mountain Cableway", "Clifton & Camps Bay", "Chapman's Peak Drive", "Hout Bay and the spectacular coastal route via Misty Cliffs", "Cape of Good Hope Nature Reserve @ SANParks", "Cape Point @ SANParks", "The famous penguins at Boulders Beach", "Return to hotel/accommodation"],
+    inc: "Driver/tour guide, vehicle and toll gate fees",
+    excludes: "Entrance fees and extra trip fees if required; lunches, drinks and snacks (own account)",
+    rates: [1750, 1750, 1750, 1750], solo: 2000, perPax: 1750, maxPax: 8 },
   { n: "02", img: "1673690129045-a6ad0b657e88", title: "Full Day Peninsula Tour", hours: "08h00/08h30–17h30",
     includes: [T, W, "Choice of Seal Island cruise OR Constantia wine tasting", "Boulders Beach penguins entrance", "Lunch at a local restaurant", "Chapman's Peak drive"],
     excludes: "None", rates: [4080, 3770, 3060, 2720] },
@@ -67,6 +72,13 @@ const LIVE = ["01", "14"];
 export const LIVE_TOURS = TOURS.filter((t) => LIVE.includes(t.n));
 
 export const BAND_LABELS = ["2 pax", "3–4 pax", "5–7 pax", "8–10 pax"];
+
+/** Per-person rate for this tour and group size, or null when priced on request. */
+export function ratePP(t: Tour, guests: number): number | null {
+  if (t.perPax != null) return guests > (t.maxPax ?? 10) ? null : guests === 1 ? t.solo ?? t.perPax : t.perPax;
+  const b = bandFor(guests);
+  return b == null ? null : t.rates[b];
+}
 
 /** Index into Tour.rates for a group size, or null when it's priced on request (1 or 11+). */
 export function bandFor(guests: number): number | null {

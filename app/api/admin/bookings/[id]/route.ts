@@ -37,6 +37,7 @@ export async function PATCH(
         fareZar: fare,
         preferredDate: booking.preferred_date,
         preferredTimeWindow: booking.preferred_time_window,
+        remarks: booking.remarks,
       }),
       sendDriverCalendarInvite({
         id: booking.id,
@@ -155,8 +156,14 @@ export async function PATCH(
       preferred_time_window: b.pickupTime || null,
       dropoff_time: b.dropoffTime || null,
       flight_number: b.flightNumber?.trim().toUpperCase() || null,
+      remarks: typeof b.remarks === "string" && b.remarks.trim() ? b.remarks.trim().slice(0, 2000) : null,
     };
-    const { error } = await db.from("bookings").update(row).eq("id", id);
+    let { error } = await db.from("bookings").update(row).eq("id", id);
+    // remarks column not added yet: save everything else.
+    if (error && /remarks/i.test(error.message ?? "")) {
+      const { remarks: _r, ...rest } = row; void _r;
+      ({ error } = await db.from("bookings").update(rest).eq("id", id));
+    }
     if (error) {
       console.error("update_details error:", error);
       return NextResponse.json({ error: "Could not save the changes." }, { status: 500 });
@@ -175,6 +182,7 @@ export async function PATCH(
           id, clientName: row.client_name, clientEmail: row.client_email,
           pickupAddress: row.pickup_address, dropoffAddress: row.dropoff_address, passengers: row.passengers,
           fareZar: row.fare_zar, preferredDate: row.preferred_date, preferredTimeWindow: row.preferred_time_window,
+          remarks: row.remarks,
         }),
       ]);
       results.forEach((r, i) => { if (r.status === "rejected") console.error(`[update_details] task ${i} failed:`, r.reason); });

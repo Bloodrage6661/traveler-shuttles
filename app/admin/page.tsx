@@ -28,6 +28,7 @@ interface Booking {
   preferred_time_window: string | null;
   dropoff_time: string | null;
   flight_number: string | null;
+  remarks?: string | null;
   status: BookingStatus;
 }
 
@@ -534,6 +535,7 @@ function NewBookingModal({ onClose, onCreated, from, mode = "new" }: { onClose: 
     preferredDate: keepWhen ? from?.preferred_date ?? "" : "", pickupTime: keepWhen ? from?.preferred_time_window ?? "" : "", dropoffTime: keepWhen ? from?.dropoff_time ?? "" : "",
     fareZar: from?.fare_zar != null ? String(from.fare_zar) : "", flightNumber: keepWhen ? from?.flight_number ?? "" : "",
     status: (mode === "edit" && from ? from.status : "confirmed") as BookingStatus,
+    remarks: from?.remarks ?? "",
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -611,6 +613,10 @@ function NewBookingModal({ onClose, onCreated, from, mode = "new" }: { onClose: 
                 <option value="pending">Pending</option>
               </select>
             </div>
+          </div>
+          <div>
+            <label className={lbl}>Remarks / special instructions (sent to the client with their confirmation)</label>
+            <textarea className={`${inp} resize-none`} rows={3} value={f.remarks} onChange={e => set("remarks", e.target.value)} placeholder="e.g. Driver will meet you at hotel reception. Bring a jacket for Cape Point." />
           </div>
           {error && <p className="text-red-500 text-sm">{error}</p>}
           <div className="flex gap-2 pt-1">

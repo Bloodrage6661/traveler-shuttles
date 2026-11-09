@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Script from "next/script";
 import { Check, Plus, Clock, Users, Car, Loader2, CheckCircle2, ArrowRight, X } from "lucide-react";
-import { LIVE_TOURS, TOURS, BAND_LABELS, bandFor, VEHICLES, vehicleFor, AFTER_HOURS_PER_HOUR, DEPOSIT_PER_PERSON, HIRE_IMG, tourImg, SHOW_HIRE } from "@/lib/tours";
+import { LIVE_TOURS, TOURS, BAND_LABELS, bandFor, ratePP, VEHICLES, vehicleFor, AFTER_HOURS_PER_HOUR, DEPOSIT_PER_PERSON, HIRE_IMG, tourImg, SHOW_HIRE } from "@/lib/tours";
 import { Reveal } from "@/components/motion";
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
@@ -53,7 +53,8 @@ export default function TourBuilder() {
       return { label: `Create your own itinerary — ${vehicle ? `${vehicle.name} + guide` : "vehicle + guide"}`, amount: vehicle ? vehicle.perDay : null, unit: "/ day" };
     }
     const t = TOURS.find((x) => x.n === id)!;
-    return { label: `${t.n} ${t.title}`, amount: band == null ? null : t.rates[band] * guests, unit: band == null ? "" : `(${R(t.rates[band])} pp)` };
+    const pp = ratePP(t, guests);
+    return { label: `${t.n} ${t.title}`, amount: pp == null ? null : pp * guests, unit: pp == null ? "" : `(${R(pp)} pp)` };
   });
   const allPriced = lines.length > 0 && lines.every((l) => l.amount != null);
   const total = lines.reduce((s, l) => s + (l.amount ?? 0), 0);
@@ -109,7 +110,7 @@ export default function TourBuilder() {
               </button>
             ))}
           </div>
-          <span className="text-xs text-slate-400">{band == null ? "Rates for 1 guest on request" : `Showing ${BAND_LABELS[band]} rates`}</span>
+          <span className="text-xs text-slate-400">{band == null ? "Prices for your group size" : `Showing ${BAND_LABELS[band]} rates`}</span>
         </div>
 
         <div className="grid sm:grid-cols-2 gap-4">
@@ -127,16 +128,16 @@ export default function TourBuilder() {
                   </div>
                 </div>
                 <ul className="space-y-1 mb-3 text-[13px] text-slate-600">
-                  {t.includes.slice(2).map((x) => (
+                  {(t.inc ? t.includes : t.includes.slice(2)).map((x) => (
                     <li key={x} className="flex gap-1.5"><Check size={14} className="text-[#1B4D2E] shrink-0 mt-0.5" /> {x}</li>
                   ))}
-                  <li className="text-xs text-slate-400 pt-1">Guide, return transfers &amp; water included · Excludes: {t.excludes}</li>
+                  <li className="text-xs text-slate-400 pt-1">{t.inc ?? "Guide, return transfers & water"} included · Excludes: {t.excludes}{t.maxPax ? ` · Max ${t.maxPax} guests` : ""}</li>
                 </ul>
                 <div className="mt-auto flex items-end justify-between gap-3 pt-3 border-t border-slate-100">
                   <div>
                     <p className="text-[11px] uppercase tracking-wide text-slate-400">{guests} guest{guests > 1 ? "s" : ""}</p>
-                    <p className="text-lg font-bold text-[#1B3A6B]">{band == null ? "On request" : R(t.rates[band] * guests)}</p>
-                    {band != null && <p className="text-xs text-slate-400">{R(t.rates[band])} per person</p>}
+                    <p className="text-lg font-bold text-[#1B3A6B]">{ratePP(t, guests) == null ? "On request" : R(ratePP(t, guests)! * guests)}</p>
+                    {ratePP(t, guests) != null && <p className="text-xs text-slate-400">{R(ratePP(t, guests)!)} per person</p>}
                   </div>
                   <button type="button" onClick={() => toggle(t.n)} aria-pressed={on}
                     className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition ${on ? "bg-[#1B4D2E] text-white" : "border border-[#1B4D2E] text-[#1B4D2E] hover:bg-[#1B4D2E]/5"}`}>

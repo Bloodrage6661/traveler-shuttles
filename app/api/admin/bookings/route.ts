@@ -49,15 +49,17 @@ export async function POST(req: NextRequest) {
     preferred_time_window: b.pickupTime || null,
     dropoff_time: b.dropoffTime || null,
     flight_number: b.flightNumber?.trim().toUpperCase() || null,
+    remarks: typeof b.remarks === "string" && b.remarks.trim() ? b.remarks.trim().slice(0, 2000) : null,
     status,
     token_used: true, // admin-created; no client confirm link needed
   };
 
-  const { data: booking, error } = await getSupabaseAdmin()
-    .from("bookings")
-    .insert(row)
-    .select()
-    .single();
+  let { data: booking, error } = await getSupabaseAdmin().from("bookings").insert(row).select().single();
+  // remarks column not added yet: save everything else.
+  if (error && /remarks/i.test(error.message ?? "")) {
+    const { remarks: _r, ...rest } = row; void _r;
+    ({ data: booking, error } = await getSupabaseAdmin().from("bookings").insert(rest).select().single());
+  }
 
   if (error || !booking) {
     console.error("Manual booking insert error:", error);

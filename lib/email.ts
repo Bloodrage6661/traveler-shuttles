@@ -194,6 +194,7 @@ export async function sendClientConfirmed(booking: {
   fareZar: number | null;
   preferredDate: string | null;
   preferredTimeWindow: string | null;
+  remarks?: string | null;
 }) {
   const ref = booking.id.slice(0, 8).toUpperCase();
   const fare = booking.fareZar ? `R ${booking.fareZar.toLocaleString("en-ZA")}` : "To be confirmed";
@@ -212,6 +213,7 @@ export async function sendClientConfirmed(booking: {
       ${row("Date", booking.preferredDate ?? "TBC")}
       ${row("Pickup time", formatPickupTime(booking.preferredTimeWindow))}
       ${row("Fare", fare)}
+      ${booking.remarks ? row("Remarks", booking.remarks) : ""}
     </table>
     <p style="font-size:14px;color:#666;">
       The driver will contact you closer to the time to confirm exact pickup details.
