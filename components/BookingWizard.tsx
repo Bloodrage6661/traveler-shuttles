@@ -101,6 +101,19 @@ export default function BookingWizard() {
     /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
+  // Existing clients: fill their details from their last booking (or account) when signed in.
+  useEffect(() => {
+    if (!user || rebook) return;
+    getSupabaseBrowser().from("bookings").select("client_name,client_email,client_cell")
+      .eq("user_id", user.id).order("created_at", { ascending: false }).limit(1)
+      .then(({ data }: { data: { client_name: string; client_email: string; client_cell: string }[] | null }) => {
+        const last = data?.[0];
+        setName((v) => v || last?.client_name || user.user_metadata?.full_name || "");
+        setEmail((v) => v || last?.client_email || user.email || "");
+        setCell((v) => v || last?.client_cell || "");
+      });
+  }, [user, rebook]);
+
   // Rebooking: look the saved addresses up again so the fare can be measured.
   useEffect(() => {
     if (!rebook) return;
@@ -355,12 +368,15 @@ export default function BookingWizard() {
               {quote && (
                 <div className="bg-gradient-to-br from-[#1B4D2E] to-[#1B3A6B] rounded-2xl p-5 text-white">
                   <p className="text-white/60 text-xs uppercase tracking-widest mb-1">
-                    {isCustom ? "Custom quote" : "Estimated fare"} · {passengers} pax · {quote.distanceKm} km
+                    {isCustom ? "Custom quote" : "Estimated total"} · {passengers} pax · {quote.distanceKm} km
                   </p>
                   <p className="text-3xl font-bold">
                     {isCustom ? "We'll quote you" : shownFare != null ? formatRand(shownFare) : "—"}
                     {!isCustom && quote.loyalty && finalFare != null && <span className="ml-2 text-base font-semibold text-white/50 line-through">{formatRand(finalFare)}</span>}
                   </p>
+                  {!isCustom && quote.fare != null && passengers > 1 && (
+                    <p className="text-white/70 text-sm mt-1">{formatRand(Math.round(quote.fare / passengers))} per person × {passengers}</p>
+                  )}
                   {!isCustom && quote.loyalty && (
                     <p className="mt-2 inline-flex items-center gap-1.5 bg-[#C9A84C] text-[#133820] text-xs font-bold px-3 py-1.5 rounded-full">
                       <Star size={12} /> Traveler Rewards: your 6th trip is half price

@@ -19,9 +19,16 @@ export function getBand(distanceKm: number): PricingBand {
 
 // One flat price per passenger count; distance band and customer tier don't
 // change it (tier is still recorded for the booking). >75 km → custom quote.
+/** Per-person rate for a group size (3+ passengers use the 3-pax rate). */
+export function perPersonFare(passengers: number): number {
+  return FLAT_FARES[passengers] ?? FLAT_FARES[3];
+}
+
 export function getFare(band: PricingBand, passengers: number, _tier: CustomerTier = "General"): number | null {
   if (band === "custom") return null;
-  return FLAT_FARES[passengers] ?? FLAT_FARES[3];
+  // FLAT_FARES are per person: the trip total is the rate × passengers.
+  const pax = Math.max(1, passengers || 1);
+  return perPersonFare(pax) * pax;
 }
 
 // Surcharge added to the fare for trips on a Saturday or Sunday.
