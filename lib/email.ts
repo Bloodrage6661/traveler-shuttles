@@ -241,6 +241,7 @@ export async function sendClientPriceUpdated(booking: {
   fareZar: number | null;
   preferredDate: string | null;
   preferredTimeWindow: string | null;
+  note?: string | null;
 }) {
   const ref = booking.id.slice(0, 8).toUpperCase();
   const fare = booking.fareZar ? `R ${booking.fareZar.toLocaleString("en-ZA")}` : "To be confirmed";
@@ -259,6 +260,7 @@ export async function sendClientPriceUpdated(booking: {
       ${row("Date", booking.preferredDate ?? "TBC")}
       ${row("Pickup time", formatPickupTime(booking.preferredTimeWindow))}
       ${rowStrong("Updated fare", fare, BRAND.green)}
+      ${booking.note ? row("Note", booking.note) : ""}
     </table>
     <p style="font-size:14px;color:#666;">
       If you have any questions about this change, just reply to this email.

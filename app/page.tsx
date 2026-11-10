@@ -393,7 +393,7 @@ export default function HomePage() {
                 <Link href="/book" className="inline-flex items-center gap-2 bg-[#C9A84C] hover:bg-[#D4B870] text-[#133820] font-bold px-8 py-4 rounded-full transition-colors">
                   Book a Transfer <ArrowRight size={18} aria-hidden="true" />
                 </Link>
-                <Link href="/contact" className="inline-flex items-center gap-2 border border-white/30 text-white hover:bg-white/10 font-semibold px-8 py-4 rounded-full transition-colors">
+                <Link href="/corporate" className="inline-flex items-center gap-2 border border-white/30 text-white hover:bg-white/10 font-semibold px-8 py-4 rounded-full transition-colors">
                   <Building2 size={16} aria-hidden="true" /> Corporate accounts
                 </Link>
               </div>

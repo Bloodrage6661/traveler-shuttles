@@ -17,6 +17,8 @@ export async function PATCH(
   const { id } = await params;
   const body = await req.json();
   const { action, finalPrice, preferredDate, pickupTime, dropoffTime } = body;
+  // Greg's optional note to the client about the price (e.g. a special discount).
+  const priceNote = typeof body.priceNote === "string" && body.priceNote.trim() ? body.priceNote.trim().slice(0, 300) : null;
   const db = getSupabaseAdmin();
 
   const { data: booking } = await db.from("bookings").select("*").eq("id", id).single();
@@ -37,7 +39,7 @@ export async function PATCH(
         fareZar: fare,
         preferredDate: booking.preferred_date,
         preferredTimeWindow: booking.preferred_time_window,
-        remarks: booking.remarks,
+        remarks: [priceNote, booking.remarks].filter(Boolean).join(" — ") || null,
       }),
       sendDriverCalendarInvite({
         id: booking.id,
@@ -77,6 +79,7 @@ export async function PATCH(
       fareZar: fare,
       preferredDate: booking.preferred_date,
       preferredTimeWindow: booking.preferred_time_window,
+      note: priceNote,
     });
   } else if (action === "reschedule") {
     // Greg changes the pickup date/time (and optional drop-off time). Updating

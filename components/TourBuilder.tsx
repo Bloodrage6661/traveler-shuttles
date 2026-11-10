@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Script from "next/script";
 import { Check, Plus, Clock, Users, Car, Loader2, CheckCircle2, ArrowRight, X } from "lucide-react";
-import { LIVE_TOURS, TOURS, BAND_LABELS, bandFor, ratePP, VEHICLES, vehicleFor, AFTER_HOURS_PER_HOUR, DEPOSIT_PER_PERSON, HIRE_IMG, tourImg, SHOW_HIRE } from "@/lib/tours";
+import { LIVE_TOURS, TOURS, BAND_LABELS, bandFor, tourTotal, VEHICLES, vehicleFor, AFTER_HOURS_PER_HOUR, DEPOSIT_PER_PERSON, HIRE_IMG, tourImg, SHOW_HIRE } from "@/lib/tours";
 import { Reveal } from "@/components/motion";
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
@@ -53,8 +53,8 @@ export default function TourBuilder() {
       return { label: `Create your own itinerary — ${vehicle ? `${vehicle.name} + guide` : "vehicle + guide"}`, amount: vehicle ? vehicle.perDay : null, unit: "/ day" };
     }
     const t = TOURS.find((x) => x.n === id)!;
-    const pp = ratePP(t, guests);
-    return { label: `${t.n} ${t.title}`, amount: pp == null ? null : pp * guests, unit: pp == null ? "" : `(${R(pp)} pp)` };
+    const tot = tourTotal(t, guests);
+    return { label: `${t.n} ${t.title}`, amount: tot, unit: tot == null ? "" : `(${R(Math.round(tot / guests))} pp)` };
   });
   const allPriced = lines.length > 0 && lines.every((l) => l.amount != null);
   const total = lines.reduce((s, l) => s + (l.amount ?? 0), 0);
@@ -136,8 +136,8 @@ export default function TourBuilder() {
                 <div className="mt-auto flex items-end justify-between gap-3 pt-3 border-t border-slate-100">
                   <div>
                     <p className="text-[11px] uppercase tracking-wide text-slate-400">{guests} guest{guests > 1 ? "s" : ""}</p>
-                    <p className="text-lg font-bold text-[#1B3A6B]">{ratePP(t, guests) == null ? "On request" : R(ratePP(t, guests)! * guests)}</p>
-                    {ratePP(t, guests) != null && <p className="text-xs text-slate-400">{R(ratePP(t, guests)!)} per person</p>}
+                    <p className="text-lg font-bold text-[#1B3A6B]">{tourTotal(t, guests) == null ? "On request" : R(tourTotal(t, guests)!)}</p>
+                    {tourTotal(t, guests) != null && <p className="text-xs text-slate-400">{R(Math.round(tourTotal(t, guests)! / guests))} per person</p>}
                   </div>
                   <button type="button" onClick={() => toggle(t.n)} aria-pressed={on}
                     className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition ${on ? "bg-[#1B4D2E] text-white" : "border border-[#1B4D2E] text-[#1B4D2E] hover:bg-[#1B4D2E]/5"}`}>

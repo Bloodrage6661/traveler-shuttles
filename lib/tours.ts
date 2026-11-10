@@ -9,8 +9,8 @@ export type Tour = {
   excludes: string;
   rates: [number, number, number, number];
   img: string; // Unsplash photo id
-  // Optional simple pricing: `solo` for 1 guest, `perPax` each for 2+, up to `maxPax`.
-  solo?: number; perPax?: number; maxPax?: number;
+  // Optional: total trip price for 1, 2, 3… guests (from Greg's price list); its length is the max group size.
+  totals?: number[]; maxPax?: number;
   inc?: string; // what the price includes, when it differs from the standard line
 };
 
@@ -22,7 +22,7 @@ export const TOURS: Tour[] = [
     includes: ["Collect at hotel", "Table Mountain Cableway", "Clifton & Camps Bay", "Chapman's Peak Drive", "Noordhoek to Cape of Good Hope via the spectacular coastal route via Misty Cliffs", "Cape of Good Hope Nature Reserve @ SANParks", "Cape Point @ SANParks", "The famous penguins at Boulders Beach", "Return to hotel/accommodation"],
     inc: "Driver/tour guide, vehicle and toll gate fees",
     excludes: "Entrance fees and extra trip fees if required; lunches, drinks and snacks (own account)",
-    rates: [1750, 1750, 1750, 1750], solo: 2000, perPax: 1750, maxPax: 8 },
+    rates: [1750, 1750, 1750, 1750], totals: [2000, 3500, 4998, 5000, 5000, 5010, 5005, 5000], maxPax: 8 },
   { n: "02", img: "1673690129045-a6ad0b657e88", title: "Full Day Peninsula Tour", hours: "08h00/08h30–17h30",
     includes: [T, W, "Choice of Seal Island cruise OR Constantia wine tasting", "Boulders Beach penguins entrance", "Lunch at a local restaurant", "Chapman's Peak drive"],
     excludes: "None", rates: [4080, 3770, 3060, 2720] },
@@ -60,10 +60,10 @@ export const TOURS: Tour[] = [
     includes: [T, W, "Robben Island tour (weather dependent)", "District Six Museum", "City orientation", "Lunch at Bo-Kaap Kombuis"],
     excludes: "None", rates: [3670, 3400, 2710, 2410] },
   { n: "14", img: "1599070158530-02bbc8e74fe3", title: "Half-Day Cape Peninsula Tour", hours: "Approx. 5 hours",
-    includes: ["Collect at your hotel or agreed pickup point", "Atlantic Seaboard drive: Sea Point, Clifton, Camps Bay & Llandudno", "Chapman's Peak Drive", "Noordhoek Beach", "Boulders Beach – African penguins", "Kalk Bay Harbour – fishing village & Cape fur seals", "Return to Cape Town via the M5"],
+    includes: ["Collect at your hotel or agreed pickup point", "Atlantic Seaboard drive: Sea Point, Clifton, Camps Bay & Llandudno", "Chapman's Peak Drive", "Drive through via the spectacular coastal road and Misty Cliffs to Cape of Good Hope", "Boulders Beach – African penguins", "Kalk Bay Harbour – fishing village & Cape fur seals", "Return to Cape Town via the M5"],
     inc: "Private shuttle with driver/guide",
     excludes: "Boulders Beach entrance fee; food and drinks (own account)",
-    rates: [1500, 1500, 1500, 1500], solo: 1800, perPax: 1500 },
+    rates: [1500, 1500, 1500, 1500], totals: [1800, 3000, 3000, 3000, 3000, 3000, 3003, 3000], maxPax: 8 },
   { n: "15", img: "1730234352013-aa4941c41466", title: "Half Day City", hours: "08h00–14h00",
     includes: [T, W, "Table Mountain cableway", "Kirstenbosch Gardens entrance", "City orientation: Bo-Kaap + Greenmarket Square"],
     excludes: "Lunch", rates: [2800, 2630, 1900, 1620] },
@@ -75,11 +75,11 @@ export const LIVE_TOURS = TOURS.filter((t) => LIVE.includes(t.n));
 
 export const BAND_LABELS = ["2 pax", "3–4 pax", "5–7 pax", "8–10 pax"];
 
-/** Per-person rate for this tour and group size, or null when priced on request. */
-export function ratePP(t: Tour, guests: number): number | null {
-  if (t.perPax != null) return guests > (t.maxPax ?? 10) ? null : guests === 1 ? t.solo ?? t.perPax : t.perPax;
+/** Total trip price for this tour and group size, or null when priced on request. */
+export function tourTotal(t: Tour, guests: number): number | null {
+  if (t.totals) return t.totals[guests - 1] ?? null;
   const b = bandFor(guests);
-  return b == null ? null : t.rates[b];
+  return b == null ? null : t.rates[b] * guests;
 }
 
 /** Index into Tour.rates for a group size, or null when it's priced on request (1 or 11+). */

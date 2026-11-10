@@ -1,13 +1,13 @@
 export type PricingBand = "25km" | "50km" | "75km" | "custom";
 export type CustomerTier = "Corporate" | "Hotel/B&B" | "General";
 
-// Flat fare per passenger count — the SAME for every customer type (Corporate,
-// Hotel/B&B, General) and every distance band up to 75 km. Market-test pricing
-// from the client (2026-10-02). Trips over 75 km still get a custom quote.
-const FLAT_FARES: Record<number, number> = {
-  1: 380,
-  2: 388,
-  3: 395,
+// Greg's price list (Nov 2026): trip TOTAL for 1, 2 and 3 passengers, by
+// distance band and customer type (rate per person × passengers, as on his
+// sheet). More than 3 passengers, or over 75 km, is a custom quote.
+const TOTALS: Record<Exclude<PricingBand, "custom">, Record<CustomerTier, [number, number, number]>> = {
+  "25km": { Corporate: [390, 761, 1114],   "Hotel/B&B": [429, 837, 1225],   General: [472, 921, 1347] },
+  "50km": { Corporate: [600, 1171, 1713],  "Hotel/B&B": [660, 1288, 1885],  General: [726, 1417, 2073] },
+  "75km": { Corporate: [1000, 1951, 2855], "Hotel/B&B": [1100, 2146, 3141], General: [1210, 2361, 3455] },
 };
 
 export function getBand(distanceKm: number): PricingBand {
@@ -17,18 +17,10 @@ export function getBand(distanceKm: number): PricingBand {
   return "custom";
 }
 
-// One flat price per passenger count; distance band and customer tier don't
-// change it (tier is still recorded for the booking). >75 km → custom quote.
-/** Per-person rate for a group size (3+ passengers use the 3-pax rate). */
-export function perPersonFare(passengers: number): number {
-  return FLAT_FARES[passengers] ?? FLAT_FARES[3];
-}
-
-export function getFare(band: PricingBand, passengers: number, _tier: CustomerTier = "General"): number | null {
+export function getFare(band: PricingBand, passengers: number, tier: CustomerTier = "General"): number | null {
   if (band === "custom") return null;
-  // FLAT_FARES are per person: the trip total is the rate × passengers.
-  const pax = Math.max(1, passengers || 1);
-  return perPersonFare(pax) * pax;
+  const pax = Math.min(3, Math.max(1, passengers || 1));
+  return (TOTALS[band][tier] ?? TOTALS[band].General)[pax - 1];
 }
 
 // Surcharge added to the fare for trips on a Saturday or Sunday.

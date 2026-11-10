@@ -288,6 +288,7 @@ function BookingCard({ booking, onUpdate, defaultExpanded, onSelectCustomer, onO
   const [loading, setLoading]   = useState(false);
   const [finalPrice, setFinalPrice] = useState<string>(booking.fare_zar != null ? String(booking.fare_zar) : "");
   const [priceSaved, setPriceSaved] = useState(false);
+  const [priceNote, setPriceNote]   = useState(""); // e.g. "Special rate for returning clients"
 
   // Reschedule editor state (pickup date/time + optional drop-off time).
   const [rDate, setRDate]       = useState(booking.preferred_date ?? "");
@@ -305,6 +306,7 @@ function BookingCard({ booking, onUpdate, defaultExpanded, onSelectCustomer, onO
       body: JSON.stringify({
         action,
         finalPrice: (action === "confirm" || action === "update_price") && finalPrice ? Number(finalPrice) : undefined,
+        priceNote: priceNote.trim() || undefined,
       }),
     });
     setLoading(false);
@@ -468,6 +470,9 @@ function BookingCard({ booking, onUpdate, defaultExpanded, onSelectCustomer, onO
                     className="w-full rounded-xl border border-slate-200 pl-7 pr-3 py-2.5 text-sm text-slate-800 outline-none focus:border-[#1B4D2E] focus:ring-2 focus:ring-[#1B4D2E]/10"
                   />
                 </div>
+                <input value={priceNote} onChange={e => setPriceNote(e.target.value)} maxLength={300}
+                  placeholder="Optional note to client, e.g. special discounted rate — not our normal price"
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800 outline-none focus:border-[#1B4D2E] focus:ring-2 focus:ring-[#1B4D2E]/10" />
                 <p className="text-xs text-slate-400 mt-1">
                   Estimated fare: {booking.fare_zar != null ? `R ${booking.fare_zar.toLocaleString("en-ZA")}` : "—"}. Adjust to the final price the client will be charged.
                 </p>
@@ -504,6 +509,9 @@ function BookingCard({ booking, onUpdate, defaultExpanded, onSelectCustomer, onO
                   {loading ? <Loader2 size={13} className="animate-spin" /> : <><Mail size={13} /> Update price &amp; notify client</>}
                 </button>
               </div>
+                <input value={priceNote} onChange={e => setPriceNote(e.target.value)} maxLength={300}
+                  placeholder="Optional note to client, e.g. special discounted rate — not our normal price"
+                  className="mt-2 w-full max-w-md rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800 outline-none focus:border-[#1B4D2E] focus:ring-2 focus:ring-[#1B4D2E]/10" />
               {priceSaved && (
                 <p className="text-green-600 text-xs font-medium mt-2 flex items-center gap-1"><Check size={12} /> Price updated — the client has been emailed the new fare.</p>
               )}
