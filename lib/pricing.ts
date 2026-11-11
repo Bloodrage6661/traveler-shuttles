@@ -1,13 +1,13 @@
 export type PricingBand = "25km" | "50km" | "75km" | "custom";
 export type CustomerTier = "Corporate" | "Hotel/B&B" | "General";
 
-// Greg's price list (Nov 2026): trip TOTAL for 1, 2 and 3 passengers, by
-// distance band and customer type (rate per person × passengers, as on his
-// sheet). More than 3 passengers, or over 75 km, is a custom quote.
-const TOTALS: Record<Exclude<PricingBand, "custom">, Record<CustomerTier, [number, number, number]>> = {
-  "25km": { Corporate: [390, 761, 1114],   "Hotel/B&B": [429, 837, 1225],   General: [472, 921, 1347] },
-  "50km": { Corporate: [600, 1171, 1713],  "Hotel/B&B": [660, 1288, 1885],  General: [726, 1417, 2073] },
-  "75km": { Corporate: [1000, 1951, 2855], "Hotel/B&B": [1100, 2146, 3141], General: [1210, 2361, 3455] },
+// Greg's price list (Nov 2026): rate PER PERSON for 1, 2 and 3 passengers, by
+// distance band and customer type. Trip total = per-person rate × passengers.
+// More than 3 passengers, or over 75 km, is a custom quote.
+const PER_PERSON: Record<Exclude<PricingBand, "custom">, Record<CustomerTier, [number, number, number]>> = {
+  "25km": { Corporate: [390, 380, 371],   "Hotel/B&B": [429, 419, 408],    General: [472, 460, 449] },
+  "50km": { Corporate: [600, 585, 571],   "Hotel/B&B": [660, 644, 628],    General: [726, 708, 691] },
+  "75km": { Corporate: [1000, 976, 952],  "Hotel/B&B": [1100, 1073, 1047], General: [1210, 1180, 1152] },
 };
 
 export function getBand(distanceKm: number): PricingBand {
@@ -20,7 +20,7 @@ export function getBand(distanceKm: number): PricingBand {
 export function getFare(band: PricingBand, passengers: number, tier: CustomerTier = "General"): number | null {
   if (band === "custom") return null;
   const pax = Math.min(3, Math.max(1, passengers || 1));
-  return (TOTALS[band][tier] ?? TOTALS[band].General)[pax - 1];
+  return (PER_PERSON[band][tier] ?? PER_PERSON[band].General)[pax - 1] * pax;
 }
 
 // Surcharge added to the fare for trips on a Saturday or Sunday.
